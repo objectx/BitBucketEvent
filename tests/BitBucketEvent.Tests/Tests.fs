@@ -56,7 +56,7 @@ let tests =
                 x
                 |> Project.toJsonValue
                 |> Encode.toString 4
-            eprintfn "v = %s" v
+            // eprintfn "v = %s" v
             match v |> Decode.fromString Project.decoder with
             | Ok(actual) ->
                 Expect.equal actual x "Should be equal"

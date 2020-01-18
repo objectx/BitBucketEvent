@@ -16,6 +16,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Types\User.fs" />
+    <Compile Include="Types\Project.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
