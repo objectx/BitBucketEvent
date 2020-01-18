@@ -1,7 +1,9 @@
 Expecto
+Expecto.FsCheck
 FSharp.Core
 dotnet-mono
 Microsoft.NET.Test.Sdk
 YoloDev.Expecto.TestSdk
 altcover
+Thoth.Json.Net
 Microsoft.NETFramework.ReferenceAssemblies

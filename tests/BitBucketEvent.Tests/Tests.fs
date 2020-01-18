@@ -1,25 +1,65 @@
+
 module Tests
 
-open System
+open BitBucketEvent.Types
 open Expecto
-open BitBucketEvent
-open BitBucketEvent.Say
+open FsCheck
+open System
+open Thoth.Json.Net
+
+module Generator =
+    let gStr = Arb.generate<NonEmptyString>
+    let gId = Gen.choose (0, 1000)
+    let gBool = Arb.generate<bool>
+    type UserGen() =
+        static member User(): Arbitrary<User.User> =
+            let makeUser (name: NonEmptyString) (email: NonEmptyString) id (display: NonEmptyString) active
+                (slug: NonEmptyString) (typ: NonEmptyString): User.User =
+                { Name = name.Get
+                  Email = email.Get
+                  Id = id
+                  DisplayName = display.Get
+                  Active = active
+                  Slug = slug.Get
+                  Type = typ.Get }
+            let gUser = makeUser <!> gStr <*> gStr <*> gId <*> gStr <*> gBool <*> gStr <*> gStr
+            gUser |> Arb.fromGen
+        static member Project (): Arbitrary<Project.Project> =
+            let makeProject (key: NonEmptyString) id (name: NonEmptyString) pub (typ: NonEmptyString): Project.Project =
+                { Key = key.Get
+                  Id = id
+                  Name = name.Get
+                  Public = pub
+                  Type = typ.Get }
+            let gProject = makeProject <!> gStr <*> gId <*> gStr <*> gBool <*> gStr
+            gProject |> Arb.fromGen
+
+let config = { FsCheckConfig.defaultConfig with
+                    arbitrary = [ typeof<Generator.UserGen> ] }
 
 [<Tests>]
 let tests =
-    testList "samples" [
-        testCase "Add two integers" <| fun _ ->
-            let subject = Say.add 1 2
-            Expect.equal subject 3 "Addition works"
-        testCase "Say nothing" <| fun _ ->
-            let subject = Say.nothing ()
-            Expect.equal subject () "Not an absolute unit"
-        testCase "Say hello all" <| fun _ ->
-            let person = {
-                Name = "Jean-Luc Picard"
-                FavoriteNumber = 4
-                FavoriteColor = Red
-                DateOfBirth = DateTimeOffset.Parse("July 13, 2305")
-            }
-            let subject = Say.helloPerson person
-            Expect.equal subject "Hello Jean-Luc Picard. You were born on 2305/07/13 and your favorite number is 4. You like Red." "You didn't say hello" ]
+    testList "isomorphism" [
+        testPropertyWithConfig config "user" <| fun (x: User.User) ->
+            let v =
+                x
+                |> User.toJsonValue
+                |> Encode.toString 4
+            // eprintfn "v = %s" v
+            match v |> Decode.fromString User.decoder with
+            | Ok(actual) ->
+                Expect.equal actual x "Should be equal"
+            | Error(s) ->
+                failtestNoStackf "error: %s" s
+        testPropertyWithConfig config "project" <| fun (x: Project.Project) ->
+            let v =
+                x
+                |> Project.toJsonValue
+                |> Encode.toString 4
+            eprintfn "v = %s" v
+            match v |> Decode.fromString Project.decoder with
+            | Ok(actual) ->
+                Expect.equal actual x "Should be equal"
+            | Error(s) ->
+                failtestNoStackf "error: %s" s
+    ]

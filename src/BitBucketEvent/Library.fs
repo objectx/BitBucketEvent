@@ -1,58 +1,113 @@
-namespace BitBucketEvent
+//
+// Copyright (c) 2020  Masashi Fujita  All rights reserved.
+//
+module BitBucketEvent.Types
+
 open System
+open Thoth.Json.Net
 
-/// <summary> Initial module </summary>
-module Say =
+module User =
+    [<Literal>]
+    let private _Name = "name"
 
-    /// <summary> Finite list of Colors </summary>
-    type FavoriteColor =
-    | Red
-    | Yellow
-    | Blue
+    [<Literal>]
+    let private _EmailAddress = "emailAddress"
 
-    type ColorMode =
-    | RGBA of r: int * g: int * b: int * a: int
+    [<Literal>]
+    let private _Id = "id"
 
-    /// <summary> A person with many different field types </summary>
-    type Person = {
-        Name : string
-        FavoriteNumber : int
-        FavoriteColor : FavoriteColor
-        DateOfBirth : DateTimeOffset
-    }
+    [<Literal>]
+    let private _DisplayName = "displayName"
 
+    [<Literal>]
+    let private _Active = "active"
 
-    /// <summary>Says hello to a specific person</summary>
-    let helloPerson (person : Person) =
-        sprintf
-            "Hello %s. You were born on %s and your favorite number is %d. You like %A."
-            person.Name
-            (person.DateOfBirth.ToString("yyyy/MM/dd"))
-            person.FavoriteNumber
-            person.FavoriteColor
+    [<Literal>]
+    let private _Slug = "slug"
 
-    /// <summary>
-    /// Adds two integers <paramref name="a"/> and <paramref name="b"/> and returns the result.
-    /// </summary>
-    ///
-    /// <remarks>
-    /// This usually contains some really important information that you'll miss if you don't read the docs.
-    /// </remarks>
-    ///
-    /// <param name="a">An integer.</param>
-    /// <param name="b">An integer.</param>
-    ///
-    /// <returns>
-    /// The sum of two integers.
-    /// </returns>
-    ///
-    /// <exceptions cref="M:System.OverflowException">Thrown when one parameter is max
-    /// and the other is greater than 0.</exceptions>
-    let add a b =
-        a + b
+    [<Literal>]
+    let private _Type = "type"
 
+    type User =
+        { Name: string
+          Email: string
+          Id: int
+          DisplayName: string
+          Active: bool
+          Slug: string
+          Type: string }
 
-    /// I do nothing
-    let nothing name =
-        name |> ignore
+    let def =
+        { Name = ""
+          Email = ""
+          Id = -1
+          DisplayName = ""
+          Active = false
+          Slug = ""
+          Type = "" }
 
+    let decoder: Decoder<User> =
+        Decode.object <| fun get ->
+            { Name = get.Required.Field _Name Decode.string
+              Email = get.Required.Field _EmailAddress Decode.string
+              Id = get.Required.Field _Id Decode.int
+              DisplayName = get.Required.Field _DisplayName Decode.string
+              Active = get.Required.Field _Active Decode.bool
+              Slug = get.Required.Field _Slug Decode.string
+              Type = get.Required.Field _Type Decode.string }
+
+    let toJsonValue (x: User) =
+        Encode.object
+            [ _Name, Encode.string x.Name
+              _EmailAddress, Encode.string x.Email
+              _Id, Encode.int x.Id
+              _DisplayName, Encode.string x.DisplayName
+              _Active, Encode.bool x.Active
+              _Slug, Encode.string x.Slug
+              _Type, Encode.string x.Type ]
+
+module Project =
+    [<Literal>]
+    let private _Key = "key"
+
+    [<Literal>]
+    let private _Id = "id"
+
+    [<Literal>]
+    let private _Name = "name"
+
+    [<Literal>]
+    let private _Public = "public"
+
+    [<Literal>]
+    let private _Type = "type"
+
+    type Project =
+        { Key: string
+          Id: int
+          Name: string
+          Public: bool
+          Type: string }
+
+    let def =
+        { Key = ""
+          Id = -1
+          Name = ""
+          Public = false
+          Type = "" }
+
+    let decoder: Decoder<Project> =
+        Decode.object <| fun get ->
+            { Key = get.Required.Field _Key Decode.string
+              Id = get.Required.Field _Id Decode.int
+              Name = get.Required.Field _Name Decode.string
+              Public = get.Required.Field _Public Decode.bool
+              Type = get.Required.Field _Type Decode.string }
+
+    let toJsonValue x =
+        Encode.object
+            [ _Key, Encode.string x.Key
+              _Id, Encode.int x.Id
+              _Name, Encode.string x.Name
+              _Public, Encode.bool x.Public
+              _Type, Encode.string x.Type ]
