@@ -33,6 +33,28 @@ module Generator =
                   Type = typ.Get }
             let gProject = makeProject <!> gStr <*> gId <*> gStr <*> gBool <*> gStr
             gProject |> Arb.fromGen
+        static member Repository(): Arbitrary<Repository.Repository> =
+            let makeRepo (slug: NonEmptyString)
+                        (id: int)
+                        (name: NonEmptyString)
+                        (scmId: NonEmptyString)
+                        (state: NonEmptyString)
+                        (statusMessage: NonEmptyString)
+                        (forkable: bool)
+                        (project: Project.Project)
+                        (pub: bool): Repository.Repository =
+                { Slug = slug.Get
+                  Id = id
+                  Name = name.Get
+                  ScmId = scmId.Get
+                  State = state.Get
+                  StatusMessage = statusMessage.Get
+                  Forkable = forkable
+                  Project = project
+                  Public = pub }
+            let gProject = Arb.generate<Project.Project>
+            let gRepo = makeRepo <!> gStr <*> gId <*> gStr <*> gStr <*> gStr <*> gStr <*> gBool <*> gProject <*> gBool
+            gRepo |> Arb.fromGen
 
 let config = { FsCheckConfig.defaultConfig with
                     arbitrary = [ typeof<Generator.UserGen> ] }
@@ -58,6 +80,17 @@ let tests =
                 |> Encode.toString 4
             // eprintfn "v = %s" v
             match v |> Decode.fromString Project.decoder with
+            | Ok(actual) ->
+                Expect.equal actual x "Should be equal"
+            | Error(s) ->
+                failtestNoStackf "error: %s" s
+        testPropertyWithConfig config "repository" <| fun (x: Repository.Repository) ->
+            let v =
+                x
+                |> Repository.toJsonValue
+                |> Encode.toString 4
+            // eprintfn "v = %s" v
+            match v |> Decode.fromString Repository.decoder with
             | Ok(actual) ->
                 Expect.equal actual x "Should be equal"
             | Error(s) ->
