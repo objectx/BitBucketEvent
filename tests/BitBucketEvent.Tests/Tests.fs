@@ -1,6 +1,7 @@
-module Tests
+module BitBucketEvent.Tests
 
 open BitBucketEvent.Types
+open BitBucketEvent.Types.PullRequest
 open Expecto
 open FsCheck
 open System
@@ -12,7 +13,6 @@ module Generator =
     let gBool = Arb.generate<bool>
 
     type UserGen() =
-
         static member User(): Arbitrary<User.User> =
             let makeUser (name: NonEmptyString) (email: NonEmptyString) id (display: NonEmptyString) active
                 (slug: NonEmptyString) (typ: NonEmptyString): User.User =
@@ -69,7 +69,8 @@ module Generator =
             gRef |> Arb.fromGen
 
         static member Participant(): Arbitrary<Participant.Participant> =
-            let makeParticipant user (role: NonEmptyString) approved (status: NonEmptyString) (lastReviewed: NonEmptyString option): Participant.Participant =
+            let makeParticipant user (role: NonEmptyString) approved (status: NonEmptyString)
+                (lastReviewed: NonEmptyString option): Participant.Participant =
                 { User = user
                   Role = role.Get
                   Approved = approved
@@ -77,15 +78,42 @@ module Generator =
                   LastReviewedCommit =
                       match lastReviewed with
                       | None -> None
-                      | Some x -> Some (x.Get) }
+                      | Some x -> Some(x.Get) }
+
             let gUser = Arb.generate<User.User>
             let gParticipant =
                 makeParticipant <!> gUser <*> gStr <*> gBool <*> gStr <*> (Gen.optionOf gStr)
             gParticipant |> Arb.fromGen
 
+        static member PullRequest(): Arbitrary<PullRequest.PullRequest> =
+            let makePR id version (title: NonEmptyString) (state: NonEmptyString) opened closed cDate uDate fromRef
+                toRef locked author reviewers participants: PullRequest.PullRequest =
+                let toDataTimeOffset (off: int64) =
+                    DateTimeOffset.FromUnixTimeSeconds(off)
+                { Id = id
+                  Version = version
+                  Title = title.Get
+                  State = state.Get
+                  Open = opened
+                  Closed = closed
+                  CreatedDate = cDate |> toDataTimeOffset
+                  UpdatedDate = uDate |> toDataTimeOffset
+                  FromRef = fromRef
+                  ToRef = toRef
+                  Locked = locked
+                  Author = author
+                  Reviewers = reviewers
+                  Participants = participants }
+
+            let gPR =
+                makePR <!> gId <*> Gen.choose (0, 12345) <*> gStr <*> gStr <*> gBool <*> gBool <*> Arb.generate<int64>
+                <*> Arb.generate<int64> <*> Arb.generate<Reference.Reference> <*> Arb.generate<Reference.Reference>
+                <*> gBool <*> Arb.generate<Participant.Participant>
+                <*> (Arb.generate<Participant.Participant> |> Gen.arrayOf)
+                <*> (Arb.generate<Participant.Participant> |> Gen.arrayOf)
+            gPR |> Arb.fromGen
+
 let config = { FsCheckConfig.defaultConfig with arbitrary = [ typeof<Generator.UserGen> ] }
-
-
 
 [<Tests>]
 let tests =
@@ -141,6 +169,17 @@ let tests =
                   |> Encode.toString 4
               // eprintfn "v = %s" v
               match v |> Decode.fromString Participant.decoder with
+              | Ok(actual) ->
+                  Expect.equal actual x "Should be equal"
+              | Error(s) ->
+                  failtestNoStackf "error: %s" s
+          testPropertyWithConfig config "pull-request" <| fun (x: PullRequest.PullRequest) ->
+              let v =
+                  x
+                  |> PullRequest.toJsonValue
+                  |> Encode.toString 4
+              // eprintfn "v = %s" v
+              match v |> Decode.fromString PullRequest.decoder with
               | Ok(actual) ->
                   Expect.equal actual x "Should be equal"
               | Error(s) ->
