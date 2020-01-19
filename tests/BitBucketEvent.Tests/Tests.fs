@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2020  Masashi Fujita  All rights reserved.
+//
 module BitBucketEvent.Tests
 
 open BitBucketEvent.Types
@@ -13,6 +16,7 @@ module Generator =
     let gBool = Arb.generate<bool>
 
     type UserGen() =
+
         static member User(): Arbitrary<User.User> =
             let makeUser (name: NonEmptyString) (email: NonEmptyString) id (display: NonEmptyString) active
                 (slug: NonEmptyString) (typ: NonEmptyString): User.User =
@@ -69,27 +73,25 @@ module Generator =
             gRef |> Arb.fromGen
 
         static member Participant(): Arbitrary<Participant.Participant> =
-            let makeParticipant user (role: NonEmptyString) approved (status: NonEmptyString)
-                (lastReviewed: NonEmptyString option): Participant.Participant =
+            let makeParticipant user (role: NonEmptyString) approved (status: NonEmptyString) (lastReviewed: string): Participant.Participant =
                 { User = user
                   Role = role.Get
                   Approved = approved
                   Status = status.Get
                   LastReviewedCommit =
-                      match lastReviewed with
-                      | None -> None
-                      | Some x -> Some(x.Get) }
+                      if lastReviewed = null then None
+                      else Some(lastReviewed) }
 
             let gUser = Arb.generate<User.User>
             let gParticipant =
-                makeParticipant <!> gUser <*> gStr <*> gBool <*> gStr <*> (Gen.optionOf gStr)
+                makeParticipant <!> gUser <*> gStr <*> gBool <*> gStr <*> Arb.generate<string>
             gParticipant |> Arb.fromGen
 
         static member PullRequest(): Arbitrary<PullRequest.PullRequest> =
             let makePR id version (title: NonEmptyString) (state: NonEmptyString) opened closed cDate uDate fromRef
                 toRef locked author reviewers participants: PullRequest.PullRequest =
                 let toDataTimeOffset (off: int64) =
-                    DateTimeOffset.FromUnixTimeSeconds(off)
+                    DateTimeOffset.FromUnixTimeMilliseconds(off)
                 { Id = id
                   Version = version
                   Title = title.Get
@@ -114,6 +116,7 @@ module Generator =
             gPR |> Arb.fromGen
 
 let config = { FsCheckConfig.defaultConfig with arbitrary = [ typeof<Generator.UserGen> ] }
+
 
 [<Tests>]
 let tests =
@@ -183,5 +186,4 @@ let tests =
               | Ok(actual) ->
                   Expect.equal actual x "Should be equal"
               | Error(s) ->
-                  failtestNoStackf "error: %s" s
-    ]
+                  failtestNoStackf "error: %s" s ]

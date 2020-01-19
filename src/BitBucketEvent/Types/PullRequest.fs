@@ -77,8 +77,8 @@ let def: PullRequest =
       State = ""
       Open = false
       Closed = false
-      CreatedDate = System.DateTimeOffset.FromUnixTimeSeconds(0L)
-      UpdatedDate = System.DateTimeOffset.FromUnixTimeSeconds(0L)
+      CreatedDate = System.DateTimeOffset.FromUnixTimeMilliseconds(0L)
+      UpdatedDate = System.DateTimeOffset.FromUnixTimeMilliseconds(0L)
       FromRef = Reference.def
       ToRef = Reference.def
       Locked = false
@@ -94,8 +94,8 @@ let decoder: Decoder<PullRequest> =
           State = get.Required.Field _State Decode.string
           Open = get.Required.Field _Open Decode.bool
           Closed = get.Required.Field _Closed Decode.bool
-          CreatedDate = get.Required.Field _CreatedDate Decode.int64 |> DateTimeOffset.FromUnixTimeSeconds
-          UpdatedDate = get.Required.Field _UpdatedDate Decode.int64 |> DateTimeOffset.FromUnixTimeSeconds
+          CreatedDate = get.Required.Field _CreatedDate Decode.int64 |> DateTimeOffset.FromUnixTimeMilliseconds
+          UpdatedDate = get.Required.Field _UpdatedDate Decode.int64 |> DateTimeOffset.FromUnixTimeMilliseconds
           FromRef = get.Required.Field _FromRef Reference.decoder
           ToRef = get.Required.Field _ToRef Reference.decoder
           Locked = get.Required.Field _Locked Decode.bool
@@ -111,8 +111,8 @@ let toJsonValue (x: PullRequest): JsonValue =
           _State, Encode.string x.State
           _Open, Encode.bool x.Open
           _Closed, Encode.bool x.Closed
-          _CreatedDate, Encode.int64 (x.CreatedDate.ToUnixTimeSeconds())
-          _UpdatedDate, Encode.int64 (x.UpdatedDate.ToUnixTimeSeconds())
+          _CreatedDate, Encode.int64 (x.CreatedDate.ToUnixTimeMilliseconds())
+          _UpdatedDate, Encode.int64 (x.UpdatedDate.ToUnixTimeMilliseconds())
           _FromRef, Reference.toJsonValue x.FromRef
           _ToRef, Reference.toJsonValue x.ToRef
           _Locked, Encode.bool x.Locked
