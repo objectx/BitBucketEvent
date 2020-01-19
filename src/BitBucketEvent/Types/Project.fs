@@ -27,7 +27,7 @@ type Project =
       Public: bool
       Type: string }
 
-let def =
+let def: Project =
     { Key = ""
       Id = -1
       Name = ""
@@ -42,7 +42,7 @@ let decoder: Decoder<Project> =
           Public = get.Required.Field _Public Decode.bool
           Type = get.Required.Field _Type Decode.string }
 
-let toJsonValue x =
+let toJsonValue (x: Project): JsonValue =
     Encode.object
         [ _Key, Encode.string x.Key
           _Id, Encode.int x.Id

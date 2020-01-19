@@ -44,6 +44,17 @@ type Repository =
       Project: Project
       Public: bool }
 
+let def: Repository =
+    { Slug = ""
+      Id = -1
+      Name = ""
+      ScmId = ""
+      State = ""
+      StatusMessage = ""
+      Forkable = false
+      Project = Project.def
+      Public = false }
+
 let decoder: Decoder<Repository> =
     Decode.object <| fun get ->
         { Slug = get.Required.Field _Slug Decode.string

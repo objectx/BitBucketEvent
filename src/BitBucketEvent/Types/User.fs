@@ -35,7 +35,8 @@ type User =
       Slug: string
       Type: string }
 
-let def =
+/// The default value
+let def: User =
     { Name = ""
       Email = ""
       Id = -1
@@ -54,7 +55,7 @@ let decoder: Decoder<User> =
           Slug = get.Required.Field _Slug Decode.string
           Type = get.Required.Field _Type Decode.string }
 
-let toJsonValue (x: User) =
+let toJsonValue (x: User): JsonValue =
     Encode.object
         [ _Name, Encode.string x.Name
           _EmailAddress, Encode.string x.Email
