@@ -4,7 +4,6 @@
 module BitBucketEvent.Tests
 
 open BitBucketEvent.Types
-open BitBucketEvent.Types.PullRequest
 open Expecto
 open FsCheck
 open System
@@ -115,6 +114,19 @@ module Generator =
                 <*> (Arb.generate<Participant.Participant> |> Gen.arrayOf)
             gPR |> Arb.fromGen
 
+        static member Comment(): Arbitrary<Comment.Comment> =
+            let makeComment id version (text: NonEmptyString) author cDate uDate: Comment.Comment =
+                { Id = id
+                  Version = version
+                  Text = text.Get
+                  Author = author
+                  CreatedDate = DateTimeOffset.FromUnixTimeMilliseconds (cDate)
+                  UpdatedDate = DateTimeOffset.FromUnixTimeMilliseconds (uDate) }
+            let gComment =
+                makeComment <!> gId <*> gId <*> gStr
+                    <*> Arb.generate<User.User> <*> Arb.generate<int64> <*> Arb.generate<int64>
+            gComment |> Arb.fromGen
+
 let config = { FsCheckConfig.defaultConfig with arbitrary = [ typeof<Generator.UserGen> ] }
 
 
@@ -172,6 +184,17 @@ let tests =
                   |> Encode.toString 4
               // eprintfn "v = %s" v
               match v |> Decode.fromString Participant.decoder with
+              | Ok(actual) ->
+                  Expect.equal actual x "Should be equal"
+              | Error(s) ->
+                  failtestNoStackf "error: %s" s
+          testPropertyWithConfig config "comment" <| fun (x: Comment.Comment) ->
+              let v =
+                  x
+                  |> Comment.toJsonValue
+                  |> Encode.toString 4
+              // eprintfn "v = %s" v
+              match v |> Decode.fromString Comment.decoder with
               | Ok(actual) ->
                   Expect.equal actual x "Should be equal"
               | Error(s) ->
