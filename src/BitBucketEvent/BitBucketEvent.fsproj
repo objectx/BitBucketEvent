@@ -22,8 +22,9 @@
     <Compile Include="Types\Reference.fs" />
     <Compile Include="Types\Participant.fs" />
     <Compile Include="Types\PullRequest.fs" />
+    <Compile Include="Types\Comment.fs" />
+    <Compile Include="Types\PullRequestEvent.fs" />
     <Compile Include="Library.fs" />
-    <Content Include="pr-open.json" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
