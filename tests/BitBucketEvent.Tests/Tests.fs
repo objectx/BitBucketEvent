@@ -120,15 +120,15 @@ module Generator =
                   Version = version
                   Text = text.Get
                   Author = author
-                  CreatedDate = DateTimeOffset.FromUnixTimeMilliseconds (cDate)
-                  UpdatedDate = DateTimeOffset.FromUnixTimeMilliseconds (uDate) }
+                  CreatedDate = DateTimeOffset.FromUnixTimeMilliseconds(cDate)
+                  UpdatedDate = DateTimeOffset.FromUnixTimeMilliseconds(uDate) }
+
             let gComment =
-                makeComment <!> gId <*> gId <*> gStr
-                    <*> Arb.generate<User.User> <*> Arb.generate<int64> <*> Arb.generate<int64>
+                makeComment <!> gId <*> gId <*> gStr <*> Arb.generate<User.User> <*> Arb.generate<int64>
+                <*> Arb.generate<int64>
             gComment |> Arb.fromGen
 
 let config = { FsCheckConfig.defaultConfig with arbitrary = [ typeof<Generator.UserGen> ] }
-
 
 [<Tests>]
 let tests =
@@ -210,3 +210,22 @@ let tests =
                   Expect.equal actual x "Should be equal"
               | Error(s) ->
                   failtestNoStackf "error: %s" s ]
+
+[<Tests>]
+let commitHashTest =
+    testList "Test CommitHash"
+        [ testCase "1 byte" <| fun _ ->
+            let v = CommitHash.fromString "AB"
+            Expect.equal v [| 0xABuy |] "should equal"
+          testCase "2 byte" <| fun _ ->
+              let v = CommitHash.fromString "AbCd"
+              Expect.equal v [| 0xABuy; 0xCDuy |] "should equal"
+          testCase "bad character"
+              (fun _ -> Expect.throws (fun () -> CommitHash.fromString "AbCdE_" |> ignore) "throw error")
+          testCase "odd length input"
+              (fun _ -> Expect.throws (fun () -> CommitHash.fromString "AbCdE" |> ignore) "throw error")
+          testPropertyWithConfig config "roundtrip" <| fun (x: byte array) ->
+              let s = CommitHash.toString x
+              let actual = CommitHash.fromString s
+              // eprintfn "s = %s" s
+              Expect.equal actual x "should equal" ]

@@ -16,6 +16,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Types\CommitHash.fs" />
     <Compile Include="Types\User.fs" />
     <Compile Include="Types\Project.fs" />
     <Compile Include="Types\Repository.fs" />
