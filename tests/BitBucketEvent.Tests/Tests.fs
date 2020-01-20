@@ -60,15 +60,15 @@ module Generator =
             gRepo |> Arb.fromGen
 
         static member Reference(): Arbitrary<Reference.Reference> =
-            let makeRef (id: NonEmptyString) (displayId: NonEmptyString) (latestCommit: NonEmptyString)
+            let makeRef (id: NonEmptyString) (displayId: NonEmptyString) (latestCommit: CommitHash.CommitHash)
                 (repo: Repository.Repository): Reference.Reference =
                 { Id = id.Get
                   DisplayId = displayId.Get
-                  LatestCommit = latestCommit.Get
+                  LatestCommit = latestCommit
                   Repository = repo }
 
             let gRepo = Arb.generate<Repository.Repository>
-            let gRef = makeRef <!> gStr <*> gStr <*> gStr <*> gRepo
+            let gRef = makeRef <!> gStr <*> gStr <*> Arb.generate<CommitHash.CommitHash> <*> gRepo
             gRef |> Arb.fromGen
 
         static member Participant(): Arbitrary<Participant.Participant> =

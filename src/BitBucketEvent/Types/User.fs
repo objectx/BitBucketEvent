@@ -57,10 +57,10 @@ let decoder: Decoder<User> =
 
 let toJsonValue (x: User): JsonValue =
     Encode.object
-        [ _Name, Encode.string x.Name
-          _EmailAddress, Encode.string x.Email
-          _Id, Encode.int x.Id
-          _DisplayName, Encode.string x.DisplayName
-          _Active, Encode.bool x.Active
-          _Slug, Encode.string x.Slug
-          _Type, Encode.string x.Type ]
+        [ _Name, x.Name |> Encode.string
+          _EmailAddress, x.Email |> Encode.string
+          _Id, x.Id |> Encode.int
+          _DisplayName, x.DisplayName |> Encode.string
+          _Active, x.Active |> Encode.bool
+          _Slug, x.Slug |> Encode.string
+          _Type, x.Type |> Encode.string ]

@@ -22,25 +22,28 @@ let private _Repository = "repository"
 type Reference =
     { Id: string
       DisplayId: string
-      LatestCommit: string
+      LatestCommit: CommitHash.CommitHash
       Repository: Repository.Repository }
 
 let def: Reference =
     { Id = ""
       DisplayId = ""
-      LatestCommit = ""
+      LatestCommit = [||]
       Repository = Repository.def }
 
 let decoder: Decoder<Reference> =
     Decode.object <| fun get ->
         { Id = get.Required.Field _Id Decode.string
           DisplayId = get.Required.Field _DisplayId Decode.string
-          LatestCommit = get.Required.Field _LatestCommit Decode.string
+          LatestCommit = get.Required.Field _LatestCommit Decode.string |> CommitHash.fromString
           Repository = get.Required.Field _Repository Repository.decoder }
 
 let toJsonValue (x: Reference): JsonValue =
     Encode.object
-        [ _Id, Encode.string x.Id
-          _DisplayId, Encode.string x.DisplayId
-          _LatestCommit, Encode.string x.LatestCommit
-          _Repository, Repository.toJsonValue x.Repository ]
+        [ _Id, x.Id |> Encode.string
+          _DisplayId, x.DisplayId |> Encode.string
+          (_LatestCommit,
+           x.LatestCommit
+           |> CommitHash.toString
+           |> Encode.string)
+          _Repository, x.Repository |> Repository.toJsonValue ]

@@ -49,9 +49,9 @@ let decoder: Decoder<Comment> =
 
 let toJsonValue (x: Comment): JsonValue =
     Encode.object
-        [   _Id, Encode.int x.Id
-            _Version, Encode.int x.Version
-            _Text, Encode.string x.Text
-            _Author, x.Author |> User.toJsonValue
-            _CreatedDate, x.CreatedDate.ToUnixTimeMilliseconds() |> Encode.int64
-            _UpdatedDate, x.UpdatedDate.ToUnixTimeMilliseconds() |> Encode.int64 ]
+        [ _Id, x.Id |> Encode.int
+          _Version, x.Version |> Encode.int
+          _Text, x.Text |> Encode.string
+          _Author, x.Author |> User.toJsonValue
+          _CreatedDate, x.CreatedDate.ToUnixTimeMilliseconds() |> Encode.int64
+          _UpdatedDate, x.UpdatedDate.ToUnixTimeMilliseconds() |> Encode.int64 ]

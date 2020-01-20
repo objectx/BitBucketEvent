@@ -60,24 +60,30 @@ module Target =
         { Id: string
           DisplayId: string
           Type: string
-          LatestCommit: string
-          LatestChangeset: string }
+          LatestCommit: CommitHash.CommitHash
+          LatestChangeset: CommitHash.CommitHash }
 
     let decoder: Decoder<Target> =
         Decode.object <| fun get ->
             { Id = get.Required.Field _Id Decode.string
               DisplayId = get.Required.Field _DisplayId Decode.string
               Type = get.Required.Field _Type Decode.string
-              LatestCommit = get.Required.Field _LatestCommit Decode.string
-              LatestChangeset = get.Required.Field _LatestChangeset Decode.string }
+              LatestCommit = get.Required.Field _LatestCommit Decode.string |> CommitHash.fromString
+              LatestChangeset = get.Required.Field _LatestChangeset Decode.string |> CommitHash.fromString }
 
     let toJsonValue (x: Target): JsonValue =
         Encode.object
-            [ _Id, Encode.string x.Id
-              _DisplayId, Encode.string x.DisplayId
-              _Type, Encode.string x.Type
-              _LatestCommit, Encode.string x.LatestCommit
-              _LatestChangeset, Encode.string x.LatestChangeset ]
+            [ _Id, x.Id |> Encode.string
+              (_DisplayId, x.DisplayId |> Encode.string)
+              (_Type, x.Type |> Encode.string)
+              (_LatestCommit,
+               x.LatestCommit
+               |> CommitHash.toString
+               |> Encode.string)
+              (_LatestChangeset,
+               x.LatestChangeset
+               |> CommitHash.toString
+               |> Encode.string) ]
 
 type Common =
     { Date: DateTimeOffset
@@ -97,3 +103,4 @@ type PullRequestEvent =
     | CommentAdded of common: Common * comment: Comment.Comment * commentParentId: int option
     | CommentEdited of common: Common * comment: Comment.Comment * commentParentId: int option * previousComment: string
     | CommentDeleted of common: Common * comment: Comment.Comment
+

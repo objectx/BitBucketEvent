@@ -44,8 +44,8 @@ let decoder: Decoder<Project> =
 
 let toJsonValue (x: Project): JsonValue =
     Encode.object
-        [ _Key, Encode.string x.Key
-          _Id, Encode.int x.Id
-          _Name, Encode.string x.Name
-          _Public, Encode.bool x.Public
-          _Type, Encode.string x.Type ]
+        [ _Key, x.Key |> Encode.string
+          _Id, x.Id |> Encode.int
+          _Name, x.Name |> Encode.string
+          _Public, x.Public |> Encode.bool
+          _Type, x.Type |> Encode.string ]

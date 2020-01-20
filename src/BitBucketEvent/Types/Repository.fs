@@ -69,12 +69,12 @@ let decoder: Decoder<Repository> =
 
 let toJsonValue (x: Repository): JsonValue =
     Encode.object
-        [ _Slug, Encode.string x.Slug
-          _Id, Encode.int x.Id
-          _Name, Encode.string x.Name
-          _ScmId, Encode.string x.ScmId
-          _State, Encode.string x.State
-          _StatusMessage, Encode.string x.StatusMessage
-          _Forkable, Encode.bool x.Forkable
-          _Project, Project.toJsonValue x.Project
-          _Public, Encode.bool x.Public ]
+        [ _Slug, x.Slug |> Encode.string
+          _Id, x.Id |> Encode.int
+          _Name, x.Name |> Encode.string
+          _ScmId, x.ScmId |> Encode.string
+          _State, x.State |> Encode.string
+          _StatusMessage, x.StatusMessage |> Encode.string
+          _Forkable, x.Forkable |> Encode.bool
+          _Project, x.Project |> Project.toJsonValue
+          _Public, x.Public |> Encode.bool ]
