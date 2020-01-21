@@ -4,58 +4,14 @@
 module BitBucketEvent.Types.PullRequestEvent
 
 open BitBucketEvent.Types
+open BitBucketEvent.Types.Literals
+open BitBucketEvent.Types.Participant
+open BitBucketEvent.Types.PullRequest
 open System
 open Thoth.Json.Net
 
-[<Literal>]
-let _EventKey = "eventKey"
-
-[<Literal>]
-let _Date = "date"
-
-[<Literal>]
-let _Actor = "actor"
-
-[<Literal>]
-let _PullRequest = "pullRequest"
-
-[<Literal>]
-let _PreviousTitle = "previousTitle"
-
-[<Literal>]
-let _PreviousDescription = "previousDescription"
-
-[<Literal>]
-let _PreviousTarget = "previousTarget"
-
-[<Literal>]
-let _AddedReviewers = "addedReviewers"
-
-[<Literal>]
-let _RemovedReviewers = "removedReviewers"
-
-[<Literal>]
-let _Participant = "participant"
-
-[<Literal>]
-let _PreviousStatus = "previousStatus"
 
 module Target =
-    [<Literal>]
-    let _Id = "id"
-
-    [<Literal>]
-    let _DisplayId = "displayId"
-
-    [<Literal>]
-    let _Type = "type"
-
-    [<Literal>]
-    let _LatestCommit = "latestCommit"
-
-    [<Literal>]
-    let _LatestChangeset = "latestChangeset"
-
     type Target =
         { Id: string
           DisplayId: string
@@ -68,27 +24,27 @@ module Target =
             { Id = get.Required.Field _Id Decode.string
               DisplayId = get.Required.Field _DisplayId Decode.string
               Type = get.Required.Field _Type Decode.string
-              LatestCommit = get.Required.Field _LatestCommit Decode.string |> CommitHash.fromString
-              LatestChangeset = get.Required.Field _LatestChangeset Decode.string |> CommitHash.fromString }
+              LatestCommit = get.Required.Field _LatestCommit CommitHash.decoder
+              LatestChangeset = get.Required.Field _LatestChangeset CommitHash.decoder }
 
     let toJsonValue (x: Target): JsonValue =
         Encode.object
             [ _Id, x.Id |> Encode.string
               (_DisplayId, x.DisplayId |> Encode.string)
               (_Type, x.Type |> Encode.string)
-              (_LatestCommit,
-               x.LatestCommit
-               |> CommitHash.toString
-               |> Encode.string)
-              (_LatestChangeset,
-               x.LatestChangeset
-               |> CommitHash.toString
-               |> Encode.string) ]
+              (_LatestCommit, x.LatestCommit |> CommitHash.toJsonValue)
+              (_LatestChangeset, x.LatestChangeset |> CommitHash.toJsonValue) ]
+
 
 type Common =
     { Date: DateTimeOffset
-      Actor: Participant.Participant
+      Actor: User.User
       PullRequest: PullRequest.PullRequest }
+    static member decoder: Decoder<Common> =
+        Decode.map3 (fun date actor pr -> { Date = date; Actor = actor; PullRequest = pr })
+            (Decode.field _Date Decode.datetimeOffset)
+            (Decode.field _Actor User.decoder)
+            (Decode.field _PullRequest PullRequest.decoder)
 
 type PullRequestEvent =
     | Opened of common: Common
@@ -104,3 +60,26 @@ type PullRequestEvent =
     | CommentEdited of common: Common * comment: Comment.Comment * commentParentId: int option * previousComment: string
     | CommentDeleted of common: Common * comment: Comment.Comment
 
+let decoder: Decoder<PullRequestEvent> =
+    let decoder' (key: string): Decoder<PullRequestEvent> =
+        match key with
+        | _PR.Opened -> Decode.map (fun x -> Opened (x)) Common.decoder
+        | _PR.Modified ->
+            Decode.map4 (fun common prevTitle prevDesc prevTarget -> Modified (common, prevTitle, prevDesc, prevTarget))
+                Common.decoder
+                Decode.string
+                Decode.string
+                Target.decoder
+        | _ -> Decode.fail (sprintf "unexpected event key: %s" key)
+    (Decode.field _EventKey Decode.string)
+        |> Decode.andThen decoder'
+
+let toJsonValue x =
+    match x with
+    | Opened (common) ->
+        Encode.object
+            [ _EventKey, _PR.Opened |> Encode.string
+              _Date, common.Date |> Encode.datetimeOffset
+              _Actor, common.Actor |> User.toJsonValue
+              _PullRequest, common.PullRequest |> PullRequest.toJsonValue ]
+    | _ -> failwithf "unhandled type: %A" x

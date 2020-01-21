@@ -5,6 +5,8 @@ module BitBucketEvent.Types.CommitHash
 
 open System
 open System.Text
+open Thoth.Json.Net
+
 
 type CommitHash = byte array
 
@@ -49,3 +51,9 @@ let fromString (s: string): CommitHash =
     for i in 0 .. 2 .. (s.Length - 2) do
         combine (s.[i + 0] |> toHex) (s.[i + 1] |> toHex) |> result.Add
     result.ToArray()
+
+let decoder: Decoder<CommitHash> =
+    Decode.map fromString Decode.string
+
+let toJsonValue (x: CommitHash): JsonValue =
+    x |> toString |> Encode.string

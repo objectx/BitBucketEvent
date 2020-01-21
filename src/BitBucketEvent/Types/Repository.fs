@@ -3,35 +3,10 @@
 //
 module BitBucketEvent.Types.Repository
 
+open BitBucketEvent.Types.Literals
 open BitBucketEvent.Types.Project
 open Thoth.Json.Net
 
-[<Literal>]
-let private _Slug = "slug"
-
-[<Literal>]
-let private _Id = "id"
-
-[<Literal>]
-let private _Name = "name"
-
-[<Literal>]
-let private _ScmId = "scmId"
-
-[<Literal>]
-let private _State = "state"
-
-[<Literal>]
-let private _StatusMessage = "statusMessage"
-
-[<Literal>]
-let private _Forkable = "forkable"
-
-[<Literal>]
-let private _Project = "project"
-
-[<Literal>]
-let private _Public = "public"
 
 type Repository =
     { Slug: string

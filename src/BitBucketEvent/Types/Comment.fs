@@ -3,32 +3,10 @@
 //
 module BitBucketEvent.Types.Comment
 
+open BitBucketEvent.Types.Literals
 open System
 open Thoth.Json.Net
 
-[<Literal>]
-let private _Id = "id"
-
-[<Literal>]
-let private _Version = "version"
-
-[<Literal>]
-let private _Text = "text"
-
-[<Literal>]
-let private _Author = "author"
-
-[<Literal>]
-let private _CreatedDate = "createdDate"
-
-[<Literal>]
-let private _UpdatedDate = "updatedDate"
-
-[<Literal>]
-let private _Comments = "comments"
-
-[<Literal>]
-let private _Tasks = "tasks"
 
 type Comment =
     { Id: int

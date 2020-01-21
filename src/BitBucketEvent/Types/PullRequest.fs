@@ -3,56 +3,10 @@
 //
 module BitBucketEvent.Types.PullRequest
 
-open BitBucketEvent.Types.Participant
-open BitBucketEvent.Types.Reference
+open BitBucketEvent.Types.Literals
 open System
 open Thoth.Json.Net
 
-
-[<Literal>]
-let _Id = "id"
-
-[<Literal>]
-let _Version = "version"
-
-[<Literal>]
-let _Title = "title"
-
-[<Literal>]
-let _State = "state"
-
-[<Literal>]
-let _Open = "open"
-
-[<Literal>]
-let _Closed = "closed"
-
-[<Literal>]
-let _CreatedDate = "createdDate"
-
-[<Literal>]
-let _UpdatedDate = "updatedDate"
-
-[<Literal>]
-let _FromRef = "fromRef"
-
-[<Literal>]
-let _ToRef = "toRef"
-
-[<Literal>]
-let _Locked = "locked"
-
-[<Literal>]
-let _Author = "author"
-
-[<Literal>]
-let _Reviewers = "reviewers"
-
-[<Literal>]
-let _Participants = "participants"
-
-[<Literal>]
-let _Links = "links"
 
 type PullRequest =
     { Id: int
@@ -104,18 +58,19 @@ let decoder: Decoder<PullRequest> =
           Participants = get.Required.Field _Participants (Decode.array Participant.decoder) }
 
 let toJsonValue (x: PullRequest): JsonValue =
+    let encodeParticipants = Array.map Participant.toJsonValue >> Encode.array
     Encode.object
-        [ _Id, Encode.int x.Id
-          _Version, Encode.int x.Version
-          _Title, Encode.string x.Title
-          _State, Encode.string x.State
-          _Open, Encode.bool x.Open
-          _Closed, Encode.bool x.Closed
-          _CreatedDate, Encode.int64 (x.CreatedDate.ToUnixTimeMilliseconds())
-          _UpdatedDate, Encode.int64 (x.UpdatedDate.ToUnixTimeMilliseconds())
-          _FromRef, Reference.toJsonValue x.FromRef
-          _ToRef, Reference.toJsonValue x.ToRef
-          _Locked, Encode.bool x.Locked
-          _Author, Participant.toJsonValue x.Author
-          _Reviewers, x.Reviewers |> Array.map Participant.toJsonValue |> Encode.array
-          _Participants, x.Participants |> Array.map Participant.toJsonValue |> Encode.array ]
+        [ _Id, x.Id |> Encode.int
+          _Version, x.Version |> Encode.int
+          _Title, x.Title |> Encode.string
+          _State, x.State |> Encode.string
+          _Open, x.Open |> Encode.bool
+          _Closed, x.Closed |> Encode.bool
+          _CreatedDate, x.CreatedDate.ToUnixTimeMilliseconds() |> Encode.int64
+          _UpdatedDate, x.UpdatedDate.ToUnixTimeMilliseconds() |> Encode.int64
+          _FromRef, x.FromRef |> Reference.toJsonValue
+          _ToRef, x.ToRef |> Reference.toJsonValue
+          _Locked, x.Locked |> Encode.bool
+          _Author, x.Author |> Participant.toJsonValue
+          _Reviewers, x.Reviewers |> encodeParticipants
+          _Participants, x.Participants |> encodeParticipants ]

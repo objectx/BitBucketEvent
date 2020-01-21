@@ -5,26 +5,7 @@ module BitBucketEvent.Types.User
 
 open Thoth.Json.Net
 
-[<Literal>]
-let private _Name = "name"
-
-[<Literal>]
-let private _EmailAddress = "emailAddress"
-
-[<Literal>]
-let private _Id = "id"
-
-[<Literal>]
-let private _DisplayName = "displayName"
-
-[<Literal>]
-let private _Active = "active"
-
-[<Literal>]
-let private _Slug = "slug"
-
-[<Literal>]
-let private _Type = "type"
+open BitBucketEvent.Types.Literals
 
 type User =
     { Name: string

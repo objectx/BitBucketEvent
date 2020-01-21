@@ -3,22 +3,8 @@
 //
 module BitBucketEvent.Types.Project
 
+open BitBucketEvent.Types.Literals
 open Thoth.Json.Net
-
-[<Literal>]
-let private _Key = "key"
-
-[<Literal>]
-let private _Id = "id"
-
-[<Literal>]
-let private _Name = "name"
-
-[<Literal>]
-let private _Public = "public"
-
-[<Literal>]
-let private _Type = "type"
 
 type Project =
     { Key: string
