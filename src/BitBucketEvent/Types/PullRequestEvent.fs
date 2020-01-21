@@ -9,6 +9,7 @@ open BitBucketEvent.Types.Participant
 open BitBucketEvent.Types.PullRequest
 open System
 open Thoth.Json.Net
+open Thoth.Json.Net
 
 
 module Target =
@@ -67,9 +68,14 @@ let decoder: Decoder<PullRequestEvent> =
         | _PR.Modified ->
             Decode.map4 (fun common prevTitle prevDesc prevTarget -> Modified (common, prevTitle, prevDesc, prevTarget))
                 Common.decoder
-                Decode.string
-                Decode.string
-                Target.decoder
+                (Decode.field _PreviousTitle Decode.string)
+                (Decode.field _PreviousDescription Decode.string)
+                (Decode.field _PreviousTarget Target.decoder)
+        | _PR.ReviewerUpdated ->
+            Decode.map3 (fun common added removed -> ReviewersUpdated (common, added, removed))
+                Common.decoder
+                (Decode.field _AddedReviewers (Decode.array User.decoder))
+                (Decode.field _AddedReviewers (Decode.array User.decoder))
         | _ -> Decode.fail (sprintf "unexpected event key: %s" key)
     (Decode.field _EventKey Decode.string)
         |> Decode.andThen decoder'

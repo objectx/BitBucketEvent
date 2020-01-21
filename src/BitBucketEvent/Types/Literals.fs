@@ -32,6 +32,9 @@ let _Key = "key"
 let _Public = "public"
 
 [<Literal>]
+let _Owner = "owner"
+
+[<Literal>]
 let _ScmId = "scmId"
 
 [<Literal>]

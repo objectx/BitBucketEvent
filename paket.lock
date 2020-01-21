@@ -228,6 +228,8 @@ NUGET
       Fable.Core (>= 3.0 < 4.0) - restriction: && (< net46) (>= netstandard2.0)
       FSharp.Core (>= 4.6.2) - restriction: || (>= net46) (>= netstandard2.0)
       Newtonsoft.Json (>= 11.0.2) - restriction: || (>= net46) (>= netstandard2.0)
+    Unquote (5.0)
+      FSharp.Core (>= 4.6.2) - restriction: || (>= net45) (>= netstandard2.0)
     YoloDev.Expecto.TestSdk (0.8)
       Expecto (>= 8.10 < 9.0) - restriction: || (>= net461) (>= netcoreapp2.0)
       FSharp.Core (>= 4.3.4) - restriction: || (>= net461) (>= netcoreapp2.0)

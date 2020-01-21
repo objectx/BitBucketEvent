@@ -12,6 +12,7 @@ nuget YoloDev.Expecto.TestSdk 0.8.0
 nuget Microsoft.NET.Test.Sdk ~> 15
 nuget altcover ~> 6
 nuget Thoth.Json.Net ~> 3
+nuget Unquote ~> 5
 
 // [ FAKE GROUP ]
 group Build
