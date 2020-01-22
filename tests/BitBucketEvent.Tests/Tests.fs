@@ -251,7 +251,7 @@ let atlassianExamples =
                       test
                           <@ status
                              |> NonNullString.value = "UNAPPROVED" @>
-                  | x -> failtestNoStackf "should be a approved event but got %A" x
+                  | x -> failtestNoStackf "should be an approved event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR unapproved" <| fun _ ->
               let src = File.ReadAllText "testdata/pr-unapproved.json"
@@ -282,7 +282,7 @@ let atlassianExamples =
                       test
                           <@ status
                              |> NonNullString.value = "APPROVED" @>
-                  | x -> failtestNoStackf "should be a unapproved event but got %A" x
+                  | x -> failtestNoStackf "should be an unapproved event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR needs work" <| fun _ ->
               let src = File.ReadAllText "testdata/pr-needs-work.json"
