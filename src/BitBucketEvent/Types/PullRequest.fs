@@ -4,6 +4,7 @@
 module BitBucketEvent.Types.PullRequest
 
 open BitBucketEvent.Types.Literals
+open BitBucketEvent.Types.Primitives
 open System
 open Thoth.Json.Net
 
@@ -11,8 +12,8 @@ open Thoth.Json.Net
 type PullRequest =
     { Id: int
       Version: int
-      Title: string
-      State: string
+      Title: NonNullString.T
+      State: NonNullString.T
       Open: bool
       Closed: bool
       CreatedDate: System.DateTimeOffset
@@ -27,8 +28,8 @@ type PullRequest =
 let def: PullRequest =
     { Id = -1
       Version = -1
-      Title = ""
-      State = ""
+      Title = NonNullString.empty
+      State = NonNullString.empty
       Open = false
       Closed = false
       CreatedDate = System.DateTimeOffset.FromUnixTimeMilliseconds(0L)
@@ -44,8 +45,8 @@ let decoder: Decoder<PullRequest> =
     Decode.object <| fun get ->
         { Id = get.Required.Field _Id Decode.int
           Version = get.Required.Field _Version Decode.int
-          Title = get.Required.Field _Title Decode.string
-          State = get.Required.Field _State Decode.string
+          Title = get.Required.Field _Title NonNullString.decoder
+          State = get.Required.Field _State NonNullString.decoder
           Open = get.Required.Field _Open Decode.bool
           Closed = get.Required.Field _Closed Decode.bool
           CreatedDate = get.Required.Field _CreatedDate Decode.int64 |> DateTimeOffset.FromUnixTimeMilliseconds
@@ -62,8 +63,8 @@ let toJsonValue (x: PullRequest): JsonValue =
     Encode.object
         [ _Id, x.Id |> Encode.int
           _Version, x.Version |> Encode.int
-          _Title, x.Title |> Encode.string
-          _State, x.State |> Encode.string
+          _Title, x.Title |> NonNullString.toJsonValue
+          _State, x.State |> NonNullString.toJsonValue
           _Open, x.Open |> Encode.bool
           _Closed, x.Closed |> Encode.bool
           _CreatedDate, x.CreatedDate.ToUnixTimeMilliseconds() |> Encode.int64

@@ -4,31 +4,32 @@
 module BitBucketEvent.Types.Reference
 
 open BitBucketEvent.Types.Literals
+open BitBucketEvent.Types.Primitives
 open Thoth.Json.Net
 
 
 type Reference =
-    { Id: string
-      DisplayId: string
+    { Id: NonNullString.T
+      DisplayId: NonNullString.T
       LatestCommit: CommitHash.CommitHash
       Repository: Repository.Repository }
 
 let def: Reference =
-    { Id = ""
-      DisplayId = ""
+    { Id = NonNullString.empty
+      DisplayId = NonNullString.empty
       LatestCommit = [||]
       Repository = Repository.def }
 
 let decoder: Decoder<Reference> =
     Decode.object <| fun get ->
-        { Id = get.Required.Field _Id Decode.string
-          DisplayId = get.Required.Field _DisplayId Decode.string
+        { Id = get.Required.Field _Id NonNullString.decoder
+          DisplayId = get.Required.Field _DisplayId NonNullString.decoder
           LatestCommit = get.Required.Field _LatestCommit CommitHash.decoder
           Repository = get.Required.Field _Repository Repository.decoder }
 
 let toJsonValue (x: Reference): JsonValue =
     Encode.object
-        [ _Id, x.Id |> Encode.string
-          _DisplayId, x.DisplayId |> Encode.string
+        [ _Id, x.Id |> NonNullString.toJsonValue
+          _DisplayId, x.DisplayId |> NonNullString.toJsonValue
           _LatestCommit, x.LatestCommit |> CommitHash.toJsonValue
           _Repository, x.Repository |> Repository.toJsonValue ]

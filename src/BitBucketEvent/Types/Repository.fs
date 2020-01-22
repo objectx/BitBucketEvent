@@ -4,52 +4,53 @@
 module BitBucketEvent.Types.Repository
 
 open BitBucketEvent.Types.Literals
+open BitBucketEvent.Types.Primitives
 open BitBucketEvent.Types.Project
 open Thoth.Json.Net
 
 
 type Repository =
-    { Slug: string
+    { Slug: NonNullString.T
       Id: int
-      Name: string
-      ScmId: string
-      State: string
-      StatusMessage: string
+      Name: NonNullString.T
+      ScmId: NonNullString.T
+      State: NonNullString.T
+      StatusMessage: NonNullString.T
       Forkable: bool
       Project: Project
       Public: bool }
 
 let def: Repository =
-    { Slug = ""
+    { Slug = NonNullString.empty
       Id = -1
-      Name = ""
-      ScmId = ""
-      State = ""
-      StatusMessage = ""
+      Name = NonNullString.empty
+      ScmId = NonNullString.empty
+      State = NonNullString.empty
+      StatusMessage = NonNullString.empty
       Forkable = false
       Project = Project.def
       Public = false }
 
 let decoder: Decoder<Repository> =
     Decode.object <| fun get ->
-        { Slug = get.Required.Field _Slug Decode.string
+        { Slug = get.Required.Field _Slug NonNullString.decoder
           Id = get.Required.Field _Id Decode.int
-          Name = get.Required.Field _Name Decode.string
-          ScmId = get.Required.Field _ScmId Decode.string
-          State = get.Required.Field _State Decode.string
-          StatusMessage = get.Required.Field _StatusMessage Decode.string
+          Name = get.Required.Field _Name NonNullString.decoder
+          ScmId = get.Required.Field _ScmId NonNullString.decoder
+          State = get.Required.Field _State NonNullString.decoder
+          StatusMessage = get.Required.Field _StatusMessage NonNullString.decoder
           Forkable = get.Required.Field _Forkable Decode.bool
           Project = get.Required.Field _Project Project.decoder
           Public = get.Required.Field _Public Decode.bool }
 
 let toJsonValue (x: Repository): JsonValue =
     Encode.object
-        [ _Slug, x.Slug |> Encode.string
+        [ _Slug, x.Slug |> NonNullString.toJsonValue
           _Id, x.Id |> Encode.int
-          _Name, x.Name |> Encode.string
-          _ScmId, x.ScmId |> Encode.string
-          _State, x.State |> Encode.string
-          _StatusMessage, x.StatusMessage |> Encode.string
+          _Name, x.Name |> NonNullString.toJsonValue
+          _ScmId, x.ScmId |> NonNullString.toJsonValue
+          _State, x.State |> NonNullString.toJsonValue
+          _StatusMessage, x.StatusMessage |> NonNullString.toJsonValue
           _Forkable, x.Forkable |> Encode.bool
           _Project, x.Project |> Project.toJsonValue
           _Public, x.Public |> Encode.bool ]

@@ -4,6 +4,7 @@
 module BitBucketEvent.Types.Project
 
 open BitBucketEvent.Types.Literals
+open BitBucketEvent.Types.Primitives
 open Thoth.Json.Net
 
 type Ownership =
@@ -11,48 +12,48 @@ type Ownership =
     | Owned of User.User
 
 type Project =
-    { Key: string
+    { Key: NonNullString.T
       Id: int
-      Name: string
-      Type: string
+      Name: NonNullString.T
+      Type: NonNullString.T
       Owner: Ownership }
 
 let def: Project =
-    { Key = ""
+    { Key = NonNullString.empty
       Id = -1
-      Name = ""
-      Type = ""
+      Name = NonNullString.empty
+      Type = NonNullString.empty
       Owner = Public }
 
 let decoder: Decoder<Project> =
     Decode.object <| fun get ->
         match get.Optional.Field _Owner User.decoder with
         | None ->
-            { Key = get.Required.Field _Key Decode.string
+            { Key = get.Required.Field _Key NonNullString.decoder
               Id = get.Required.Field _Id Decode.int
-              Name = get.Required.Field _Name Decode.string
+              Name = get.Required.Field _Name NonNullString.decoder
               Owner = Public
-              Type = get.Required.Field _Type Decode.string }
+              Type = get.Required.Field _Type NonNullString.decoder }
         | Some (owner) ->
-            { Key = get.Required.Field _Key Decode.string
+            { Key = get.Required.Field _Key NonNullString.decoder
               Id = get.Required.Field _Id Decode.int
-              Name = get.Required.Field _Name Decode.string
+              Name = get.Required.Field _Name NonNullString.decoder
               Owner = Owned owner
-              Type = get.Required.Field _Type Decode.string }
+              Type = get.Required.Field _Type NonNullString.decoder }
 
 let toJsonValue (x: Project): JsonValue =
     match x.Owner with
     | Public ->
         Encode.object
-            [ _Key, x.Key |> Encode.string
+            [ _Key, x.Key |> NonNullString.toJsonValue
               _Id, x.Id |> Encode.int
-              _Name, x.Name |> Encode.string
+              _Name, x.Name |> NonNullString.toJsonValue
               _Public, true |> Encode.bool
-              _Type, x.Type |> Encode.string ]
+              _Type, x.Type |> NonNullString.toJsonValue ]
     | Owned owner ->
         Encode.object
-            [ _Key, x.Key |> Encode.string
+            [ _Key, x.Key |> NonNullString.toJsonValue
               _Id, x.Id |> Encode.int
-              _Name, x.Name |> Encode.string
+              _Name, x.Name |> NonNullString.toJsonValue
               _Owner, owner |> User.toJsonValue
-              _Type, x.Type |> Encode.string ]
+              _Type, x.Type |> NonNullString.toJsonValue ]
