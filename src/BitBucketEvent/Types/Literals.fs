@@ -116,7 +116,13 @@ let _Links = "links"
 let _Text = "text"
 
 [<Literal>]
+let _Comment = "comment"
+
+[<Literal>]
 let _Comments = "comments"
+
+[<Literal>]
+let _CommentParentId = "commentParentId"
 
 [<Literal>]
 let _Tasks = "tasks"
@@ -156,6 +162,9 @@ let _PreviousStatus = "previousStatus"
 
 [<Literal>]
 let _LatestChangeset = "latestChangeset"
+
+[<Literal>]
+let _PreviousComment = "previousComment"
 
 module _PR =
     [<Literal>]

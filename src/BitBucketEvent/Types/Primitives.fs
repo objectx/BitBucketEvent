@@ -8,13 +8,16 @@ open Thoth.Json.Net
 
 [<RequireQualifiedAccess>]
 module NonNullString =
-    type [<Struct>] T = NonNullString of string
+    [<Struct>]
+    type T = NonNullString of string
 
     let empty = NonNullString ""
 
     let create (s: string) =
-        let s' = if isNull s then "" else s
-        NonNullString (s')
+        let s' =
+            if isNull s then ""
+            else s
+        NonNullString(s')
 
     let value (NonNullString s) =
         s
@@ -27,7 +30,9 @@ module NonNullString =
 
 [<RequireQualifiedAccess>]
 module Timestamp =
-    type [<Struct>] T = Timestamp of DateTimeOffset
+    [<Struct>]
+    type T = Timestamp of DateTimeOffset
+
     let def = DateTimeOffset.FromUnixTimeSeconds 0L |> Timestamp
 
     let create (t: DateTimeOffset) =
@@ -36,8 +41,11 @@ module Timestamp =
     let value (Timestamp t) =
         t
 
+    let toInt (Timestamp t) =
+        t.ToUnixTimeMilliseconds()
+
     let decoder: Decoder<T> =
         Decode.map (DateTimeOffset.FromUnixTimeMilliseconds >> create) Decode.int64
 
     let toJsonValue (Timestamp t) =
-        t.ToUnixTimeMilliseconds () |> Encode.int64
+        t.ToUnixTimeMilliseconds() |> Encode.int64
