@@ -3,7 +3,6 @@
 //
 module BitBucketEvent.Types.Participant
 
-open BitBucketEvent.Types.CommitHash
 open BitBucketEvent.Types.Literals
 open BitBucketEvent.Types.Primitives
 open Thoth.Json.Net

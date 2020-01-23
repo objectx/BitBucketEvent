@@ -11,13 +11,13 @@ open Thoth.Json.Net
 type Reference =
     { Id: NonNullString
       DisplayId: NonNullString
-      LatestCommit: CommitHash.CommitHash
+      LatestCommit: CommitHash
       Repository: Repository.Repository }
 
 let def: Reference =
     { Id = NonNullString.empty
       DisplayId = NonNullString.empty
-      LatestCommit = [||]
+      LatestCommit = CommitHash.def
       Repository = Repository.def }
 
 let decoder: Decoder<Reference> =

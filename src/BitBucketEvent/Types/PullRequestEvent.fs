@@ -17,8 +17,8 @@ module Target =
         { Id: NonNullString
           DisplayId: NonNullString
           Type: NonNullString
-          LatestCommit: CommitHash.CommitHash
-          LatestChangeset: CommitHash.CommitHash }
+          LatestCommit: CommitHash
+          LatestChangeset: CommitHash }
 
     let decoder: Decoder<Target> =
         Decode.object <| fun get ->

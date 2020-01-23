@@ -17,7 +17,12 @@ module Generator =
 
         static member NonNullString(): Arbitrary<NonNullString> =
             Arb.generate<string>
-            |> Gen.map (fun x -> NonNullString.create x)
+            |> Gen.map NonNullString.create
+            |> Arb.fromGen
+
+        static member CommitHash(): Arbitrary<CommitHash> =
+            Arb.generate<FixedLengthArray<byte>>
+            |> Gen.map (fun x -> x.Get |> CommitHash.create)
             |> Arb.fromGen
 
         static member Ownership(): Arbitrary<Project.Ownership> =
@@ -40,16 +45,16 @@ let commitHashTest =
     testList "Test CommitHash"
         [ testCase "1 byte" <| fun () ->
             let v = CommitHash.fromString "AB"
-            test <@ v = [| 0xABuy |] @>
+            test <@ v = ([| 0xABuy |] |> CommitHash.create) @>
           testCase "2 byte" <| fun () ->
               let v = CommitHash.fromString "AbCd"
-              test <@ v = [| 0xABuy; 0xCDuy |] @>
+              test <@ v = ([| 0xABuy; 0xCDuy |] |> CommitHash.create) @>
           testCase "bad character" <| fun () -> raises<exn> <@ CommitHash.fromString "AbCdE_" |> ignore @>
           testCase "odd length input" <| fun () -> raises<exn> <@ CommitHash.fromString "AbCdE" |> ignore @>
-          testPropertyWithConfig config "roundtrip" <| fun (x: byte array) ->
-              let s = CommitHash.toString x
-              let actual = CommitHash.fromString s
-              // eprintfn "s = %s" s
+          testPropertyWithConfig config "roundtrip" <| fun (x: CommitHash) ->
+              let s = x |> CommitHash.toString
+              let actual = s |> CommitHash.fromString
+              eprintfn "s = %s" s
               check <@ actual = x @> ]
 
 [<Tests>]
