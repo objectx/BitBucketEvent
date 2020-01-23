@@ -26,7 +26,7 @@ module Generator =
             |> Arb.fromGen
 
         static member Ownership(): Arbitrary<Project.Ownership> =
-            let gu = Arb.generate<User.User>
+            let gu = Arb.generate<User>
             Gen.oneof
                 [ Gen.constant Project.Ownership.Public
                   gu |> Gen.map Project.Ownership.Owned ]
@@ -54,13 +54,13 @@ let commitHashTest =
           testPropertyWithConfig config "roundtrip" <| fun (x: CommitHash) ->
               let s = x |> CommitHash.toString
               let actual = s |> CommitHash.fromString
-              eprintfn "s = %s" s
+              // eprintfn "s = %s" s
               check <@ actual = x @> ]
 
 [<Tests>]
 let tests =
     testList "isomorphism"
-        [ testPropertyWithConfig config "user" <| fun (x: User.User) ->
+        [ testPropertyWithConfig config "user" <| fun (x: User) ->
             let v =
                 x
                 |> User.toJsonValue

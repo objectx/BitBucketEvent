@@ -39,7 +39,7 @@ module Target =
 
 type Common =
     { Date: DateTimeOffset
-      Actor: User.User
+      Actor: User
       PullRequest: PullRequest.PullRequest }
     static member decoder: Decoder<Common> =
         Decode.map3 (fun date actor pr ->
@@ -51,7 +51,7 @@ type Common =
 type PullRequestEvent =
     | Opened of common: Common
     | Modified of common: Common * previousTitle: NonNullString * previousDescription: NonNullString * previousTarget: Target.Target
-    | ReviewersUpdated of common: Common * addedReviewers: User.User array * removedReviewers: User.User array
+    | ReviewersUpdated of common: Common * addedReviewers: User array * removedReviewers: User array
     | Approved of common: Common * participant: Participant.Participant * previousStatus: NonNullString
     | Unapproved of common: Common * participant: Participant.Participant * previousStatus: NonNullString
     | NeedsWork of common: Common * participant: Participant.Participant * previousStatus: NonNullString
@@ -106,7 +106,7 @@ let toJsonValue x =
         seq {
             yield (_EventKey, typ |> Encode.string)
             yield (_Date, common.Date |> Encode.datetimeOffset)
-            yield (_Actor, common.Actor |> User.toJsonValue)
+            yield (_Actor, (common.Actor |> User.toJsonValue))
             yield (_PullRequest, common.PullRequest |> PullRequest.toJsonValue)
         }
 

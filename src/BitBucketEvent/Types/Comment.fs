@@ -13,7 +13,7 @@ type Comment =
     { Id: int
       Version: int
       Text: NonNullString
-      Author: User.User
+      Author: User
       CreatedDate: Timestamp
       UpdatedDate: Timestamp }
 
@@ -31,6 +31,6 @@ let toJsonValue (x: Comment): JsonValue =
         [ _Id, x.Id |> Encode.int
           _Version, x.Version |> Encode.int
           _Text, (x.Text |> NonNullString.toJsonValue)
-          _Author, x.Author |> User.toJsonValue
+          _Author, (x.Author |> User.toJsonValue)
           _CreatedDate, (x.CreatedDate |> Timestamp.toJsonValue)
           _UpdatedDate, (x.UpdatedDate |> Timestamp.toJsonValue) ]

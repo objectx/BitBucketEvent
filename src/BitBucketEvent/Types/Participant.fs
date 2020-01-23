@@ -9,7 +9,7 @@ open Thoth.Json.Net
 
 
 type Participant =
-    { User: User.User
+    { User: User
       Role: NonNullString
       Approved: bool
       Status: NonNullString
@@ -32,7 +32,7 @@ let decoder: Decoder<Participant> =
 
 let toJsonValue (x: Participant): JsonValue =
     let slots =
-        [ _User, x.User |> User.toJsonValue
+        [ _User, (x.User |> User.toJsonValue)
           _Role, (x.Role |> NonNullString.toJsonValue)
           _Approved, x.Approved |> Encode.bool
           _Status, (x.Status |> NonNullString.toJsonValue)

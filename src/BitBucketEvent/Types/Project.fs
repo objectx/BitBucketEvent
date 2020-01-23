@@ -9,7 +9,7 @@ open Thoth.Json.Net
 
 type Ownership =
     | Public
-    | Owned of User.User
+    | Owned of User
 
 type Project =
     { Key: NonNullString
@@ -55,5 +55,5 @@ let toJsonValue (x: Project): JsonValue =
             [ _Key, x.Key |> NonNullString.toJsonValue
               _Id, x.Id |> Encode.int
               _Name, x.Name |> NonNullString.toJsonValue
-              _Owner, owner |> User.toJsonValue
+              _Owner, (owner |> User.toJsonValue)
               _Type, x.Type |> NonNullString.toJsonValue ]
