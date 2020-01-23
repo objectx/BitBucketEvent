@@ -18,8 +18,8 @@ type PullRequest =
       Closed: bool
       CreatedDate: System.DateTimeOffset
       UpdatedDate: System.DateTimeOffset
-      FromRef: Reference.Reference
-      ToRef: Reference.Reference
+      FromRef: Reference
+      ToRef: Reference
       Locked: bool
       Author: Participant.Participant
       Reviewers: Participant.Participant array

@@ -93,7 +93,7 @@ let tests =
                   check <@ actual = x @>
               | Error(s) ->
                   failtestNoStackf "error: %s" s
-          testPropertyWithConfig config "reference" <| fun (x: Reference.Reference) ->
+          testPropertyWithConfig config "reference" <| fun (x: Reference) ->
               let v =
                   x
                   |> Reference.toJsonValue
