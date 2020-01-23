@@ -26,6 +26,7 @@
     <Compile Include="Types\Participant.fs" />
     <Compile Include="Types\PullRequestDescription.fs" />
     <Compile Include="Types\Comment.fs" />
+    <Compile Include="Types\Target.fs" />
     <Compile Include="Types\PullRequestEvent.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>

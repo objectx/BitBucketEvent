@@ -20,10 +20,12 @@ module Generator =
             |> Gen.map NonNullString.create
             |> Arb.fromGen
 
+
         static member CommitHash(): Arbitrary<CommitHash> =
             Arb.generate<FixedLengthArray<byte>>
             |> Gen.map (fun x -> x.Get |> CommitHash.create)
             |> Arb.fromGen
+
 
         static member Ownership(): Arbitrary<Ownership> =
             let gu = Arb.generate<User>
@@ -39,6 +41,7 @@ let config = { FsCheckConfig.defaultConfig with arbitrary = [ typeof<Generator.U
 
 let private check x =
     (sprintf "expr: %A" (x |> unquote)) @| (x |> eval)
+
 
 [<Tests>]
 let commitHashTest =
@@ -61,10 +64,7 @@ let commitHashTest =
 let tests =
     testList "isomorphism"
         [ testPropertyWithConfig config "user" <| fun (x: User) ->
-            let v =
-                x
-                |> User.toJsonValue
-                |> Encode.toString 4
+            let v = x.asJsonValue |> Encode.toString 4
             // eprintfn "v = %s" v
             match v |> Decode.fromString User.decoder with
             | Ok(actual) ->
@@ -72,10 +72,7 @@ let tests =
             | Error(s) ->
                 failtestNoStackf "error: %s" s
           testPropertyWithConfig config "project" <| fun (x: Project) ->
-              let v =
-                  x
-                  |> Project.toJsonValue
-                  |> Encode.toString 4
+              let v = x.asJsonValue |> Encode.toString 4
               // eprintfn "v = %s" v
               match v |> Decode.fromString Project.decoder with
               | Ok(actual) ->
@@ -83,10 +80,7 @@ let tests =
               | Error(s) ->
                   failtestNoStackf "error: %s" s
           testPropertyWithConfig config "repository" <| fun (x: Repository) ->
-              let v =
-                  x
-                  |> Repository.toJsonValue
-                  |> Encode.toString 4
+              let v = x.asJsonValue |> Encode.toString 4
               // eprintfn "v = %s" v
               match v |> Decode.fromString Repository.decoder with
               | Ok(actual) ->
@@ -94,10 +88,7 @@ let tests =
               | Error(s) ->
                   failtestNoStackf "error: %s" s
           testPropertyWithConfig config "reference" <| fun (x: Reference) ->
-              let v =
-                  x
-                  |> Reference.toJsonValue
-                  |> Encode.toString 4
+              let v = x.asJsonValue |> Encode.toString 4
               // eprintfn "v = %s" v
               match v |> Decode.fromString Reference.decoder with
               | Ok(actual) ->
@@ -105,10 +96,7 @@ let tests =
               | Error(s) ->
                   failtestNoStackf "error: %s" s
           testPropertyWithConfig config "participant" <| fun (x: Participant) ->
-              let v =
-                  x
-                  |> Participant.toJsonValue
-                  |> Encode.toString 4
+              let v = x.asJsonValue |> Encode.toString 4
               // eprintfn "v = %s" v
               match v |> Decode.fromString Participant.decoder with
               | Ok(actual) ->
@@ -116,10 +104,7 @@ let tests =
               | Error(s) ->
                   failtestNoStackf "error: %s" s
           testPropertyWithConfig config "comment" <| fun (x: Comment) ->
-              let v =
-                  x
-                  |> Comment.toJsonValue
-                  |> Encode.toString 4
+              let v = x.asJsonValue |> Encode.toString 4
               // eprintfn "v = %s" v
               match v |> Decode.fromString Comment.decoder with
               | Ok(actual) ->
@@ -127,21 +112,15 @@ let tests =
               | Error(s) ->
                   failtestNoStackf "error: %s" s
           testPropertyWithConfig config "pull-request" <| fun (x: PullRequestDescription) ->
-              let v =
-                  x
-                  |> PullRequestDescription.toJsonValue
-                  |> Encode.toString 4
+              let v = x.asJsonValue |> Encode.toString 4
               // eprintfn "v = %s" v
               match v |> Decode.fromString PullRequestDescription.decoder with
               | Ok(actual) ->
                   check <@ actual = x @>
               | Error(s) ->
                   failtestNoStackf "error: %s" s
-          testPropertyWithConfig config "pull-request event" <| fun (x: PullRequest.Event) ->
-              let v =
-                  x
-                  |> PullRequest.Event.toJsonValue
-                  |> Encode.toString 4
+          testPropertyWithConfig { config with maxTest = 4 * config.maxTest } "pull-request event" <| fun (x: PullRequest.Event) ->
+              let v = x.asJsonValue |> Encode.toString 4
               match v |> Decode.fromString PullRequest.Event.decoder with
               | Ok(actual) ->
                   check <@ actual = x @>

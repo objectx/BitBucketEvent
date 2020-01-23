@@ -9,30 +9,6 @@ open BitBucketEvent.Types.Primitives
 open System
 open Thoth.Json.Net
 
-type Target =
-    { Id: NonNullString
-      DisplayId: NonNullString
-      Type: NonNullString
-      LatestCommit: CommitHash
-      LatestChangeset: CommitHash }
-
-    static member decoder: Decoder<Target> =
-        Decode.object <| fun get ->
-            { Id = get.Required.Field _Id NonNullString.decoder
-              DisplayId = get.Required.Field _DisplayId NonNullString.decoder
-              Type = get.Required.Field _Type NonNullString.decoder
-              LatestCommit = get.Required.Field _LatestCommit CommitHash.decoder
-              LatestChangeset = get.Required.Field _LatestChangeset CommitHash.decoder }
-
-    static member toJsonValue (x: Target): JsonValue =
-        Encode.object
-            [ _Id, x.Id.asJsonValue
-              _DisplayId, x.DisplayId.asJsonValue
-              _Type, x.Type.asJsonValue
-              _LatestCommit, x.LatestCommit.asJsonValue
-              _LatestChangeset, x.LatestChangeset.asJsonValue ]
-
-    member inline self.asJsonValue = self |> Target.toJsonValue
 
 type EventCommon =
     { Date: DateTimeOffset
@@ -74,8 +50,8 @@ type Event =
                     (Decode.field _AddedReviewers (Decode.array User.decoder))
                     (Decode.field _RemovedReviewers (Decode.array User.decoder))
             | _PR.Approved ->
-                Decode.map3 (fun common participant status -> Approved(common, participant, status)) EventCommon.decoder
-                    (Decode.field _Participant Participant.decoder)
+                Decode.map3 (fun common participant status -> Approved(common, participant, status))
+                    EventCommon.decoder (Decode.field _Participant Participant.decoder)
                     (Decode.field _PreviousStatus NonNullString.decoder)
             | _PR.Unapproved ->
                 Decode.map3 (fun common participant status -> Unapproved(common, participant, status))
@@ -83,26 +59,26 @@ type Event =
                     (Decode.field _PreviousStatus NonNullString.decoder)
             | _PR.NeedsWork ->
                 Decode.map3 (fun common participant status -> NeedsWork(common, participant, status))
-                    EventCommon.decoder (Decode.field _Participant Participant.decoder)
+                    (EventCommon.decoder) (Decode.field _Participant Participant.decoder)
                     (Decode.field _PreviousStatus NonNullString.decoder)
             | _PR.Merged -> Decode.map (fun x -> Merged(x)) EventCommon.decoder
             | _PR.Declined -> Decode.map (fun x -> Declined(x)) EventCommon.decoder
             | _PR.Deleted -> Decode.map (fun x -> Deleted(x)) EventCommon.decoder
             | _PR.CommentAdded ->
-                Decode.map3 (fun common comment parent -> CommentAdded(common, comment, parent)) EventCommon.decoder
-                    (Decode.field _Comment Comment.decoder)
-                    (Decode.field _CommentParentId (Decode.option Decode.int))
+                Decode.map3 (fun common comment parent -> CommentAdded(common, comment, parent)) (EventCommon.decoder)
+                    (Decode.field _Comment Comment.decoder) (Decode.optional _CommentParentId Decode.int)
             | _PR.CommentEdited ->
                 Decode.map4 (fun common comment parent prevText -> CommentEdited(common, comment, parent, prevText))
-                    EventCommon.decoder (Decode.field _Comment Comment.decoder)
-                    (Decode.field _CommentParentId (Decode.option Decode.int))
+                    (EventCommon.decoder) (Decode.field _Comment Comment.decoder)
+                    (Decode.optional _CommentParentId Decode.int)
                     (Decode.field _PreviousComment NonNullString.decoder)
             | _PR.CommentDeleted ->
-                Decode.map3 (fun common comment parent -> CommentDeleted(common, comment, parent)) EventCommon.decoder
-                    (Decode.field _Comment Comment.decoder)
-                    (Decode.field _CommentParentId (Decode.option Decode.int))
+                Decode.map3 (fun common comment parent -> CommentDeleted(common, comment, parent))
+                    (EventCommon.decoder) (Decode.field _Comment Comment.decoder)
+                    (Decode.optional _CommentParentId Decode.int)
             | _ -> Decode.fail (sprintf "unexpected event key: %s" key)
         (Decode.field _EventKey Decode.string) |> Decode.andThen decoder'
+
 
 
     static member toJsonValue (x: Event): JsonValue =
@@ -169,20 +145,20 @@ type Event =
             preamble _PR.CommentAdded common
             |> Seq.append
                 [ _Comment, comment.asJsonValue
-                  _CommentParentId, parent |> Encode.option Encode.int ]
+                  if parent.IsSome then (_CommentParentId, parent.Value |> Encode.int) ]
             |> encode
         | CommentEdited(common, comment, parent, prevText) ->
             preamble _PR.CommentEdited common
             |> Seq.append
                 [ _Comment, comment.asJsonValue
                   _PreviousComment, prevText.asJsonValue
-                  _CommentParentId, parent |> Encode.option Encode.int ]
+                  if parent.IsSome then (_CommentParentId, parent.Value |> Encode.int) ]
             |> encode
         | CommentDeleted(common, comment, parent) ->
             preamble _PR.CommentDeleted common
             |> Seq.append
                 [ _Comment, comment.asJsonValue
-                  _CommentParentId, parent |> Encode.option Encode.int ]
+                  if parent.IsSome then (_CommentParentId, parent.Value |> Encode.int) ]
             |> encode
 
     member inline self.asJsonValue = self |> Event.toJsonValue
