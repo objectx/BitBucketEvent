@@ -45,4 +45,4 @@ type User =
               _Slug, x.Slug |> NonNullString.toJsonValue
               _Type, x.Type |> NonNullString.toJsonValue ]
 
-    member self.asJsonValue = self |> User.toJsonValue
+    member inline self.asJsonValue = self |> User.toJsonValue

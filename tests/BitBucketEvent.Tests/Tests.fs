@@ -25,11 +25,11 @@ module Generator =
             |> Gen.map (fun x -> x.Get |> CommitHash.create)
             |> Arb.fromGen
 
-        static member Ownership(): Arbitrary<Project.Ownership> =
+        static member Ownership(): Arbitrary<Ownership> =
             let gu = Arb.generate<User>
             Gen.oneof
-                [ Gen.constant Project.Ownership.Public
-                  gu |> Gen.map Project.Ownership.Owned ]
+                [ Gen.constant Ownership.Public
+                  gu |> Gen.map Ownership.Owned ]
             |> Arb.fromGen
 
         static member Timestamp(): Arbitrary<Primitives.Timestamp> =
@@ -71,7 +71,7 @@ let tests =
                 check <@ actual = x @>
             | Error(s) ->
                 failtestNoStackf "error: %s" s
-          testPropertyWithConfig config "project" <| fun (x: Project.Project) ->
+          testPropertyWithConfig config "project" <| fun (x: Project) ->
               let v =
                   x
                   |> Project.toJsonValue

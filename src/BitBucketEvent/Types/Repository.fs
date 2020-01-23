@@ -5,7 +5,6 @@ module BitBucketEvent.Types.Repository
 
 open BitBucketEvent.Types.Literals
 open BitBucketEvent.Types.Primitives
-open BitBucketEvent.Types.Project
 open Thoth.Json.Net
 
 
