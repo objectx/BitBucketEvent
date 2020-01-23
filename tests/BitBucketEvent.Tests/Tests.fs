@@ -13,14 +13,12 @@ open System.IO
 open Thoth.Json.Net
 
 module Generator =
-    let gStr = Arb.generate<NonEmptyString>
-    let gId = Gen.choose (0, 1000)
-    let gBool = Arb.generate<bool>
-
     type UserGen() =
 
         static member NonNullString(): Arbitrary<Primitives.NonNullString.T> =
-            (fun (x: NonEmptyString) -> x.Get |> Primitives.NonNullString.create) <!> gStr |> Arb.fromGen
+            Arb.generate<string>
+            |> Gen.map Primitives.NonNullString.create
+            |> Arb.fromGen
 
         static member Ownership(): Arbitrary<Project.Ownership> =
             let gu = Arb.generate<User.User>
@@ -36,6 +34,23 @@ let config = { FsCheckConfig.defaultConfig with arbitrary = [ typeof<Generator.U
 
 let private check x =
     (sprintf "expr: %A" (x |> unquote)) @| (x |> eval)
+
+[<Tests>]
+let commitHashTest =
+    testList "Test CommitHash"
+        [ testCase "1 byte" <| fun () ->
+            let v = CommitHash.fromString "AB"
+            test <@ v = [| 0xABuy |] @>
+          testCase "2 byte" <| fun () ->
+              let v = CommitHash.fromString "AbCd"
+              test <@ v = [| 0xABuy; 0xCDuy |] @>
+          testCase "bad character" <| fun () -> raises<exn> <@ CommitHash.fromString "AbCdE_" |> ignore @>
+          testCase "odd length input" <| fun () -> raises<exn> <@ CommitHash.fromString "AbCdE" |> ignore @>
+          testPropertyWithConfig config "roundtrip" <| fun (x: byte array) ->
+              let s = CommitHash.toString x
+              let actual = CommitHash.fromString s
+              // eprintfn "s = %s" s
+              check <@ actual = x @> ]
 
 [<Tests>]
 let tests =
@@ -117,11 +132,7 @@ let tests =
                   check <@ actual = x @>
               | Error(s) ->
                   failtestNoStackf "error: %s" s
-          testPropertyWithConfig
-              { config with
-                    maxTest = 1200
-                    endSize = 40 } "pull-request event"
-          <| fun (x: PullRequestEvent.PullRequestEvent) ->
+          testPropertyWithConfig config "pull-request event" <| fun (x: PullRequestEvent.PullRequestEvent) ->
               let v =
                   x
                   |> PullRequestEvent.toJsonValue
@@ -134,26 +145,9 @@ let tests =
                   failtestNoStackf "error: %s" s ]
 
 [<Tests>]
-let commitHashTest =
-    testList "Test CommitHash"
-        [ testCase "1 byte" <| fun _ ->
-            let v = CommitHash.fromString "AB"
-            test <@ v = [| 0xABuy |] @>
-          testCase "2 byte" <| fun _ ->
-              let v = CommitHash.fromString "AbCd"
-              test <@ v = [| 0xABuy; 0xCDuy |] @>
-          testCase "bad character" <| fun _ -> raises<exn> <@ CommitHash.fromString "AbCdE_" |> ignore @>
-          testCase "odd length input" <| fun _ -> raises<exn> <@ CommitHash.fromString "AbCdE" |> ignore @>
-          testPropertyWithConfig config "roundtrip" <| fun (x: byte array) ->
-              let s = CommitHash.toString x
-              let actual = CommitHash.fromString s
-              // eprintfn "s = %s" s
-              check <@ actual = x @> ]
-
-[<Tests>]
 let atlassianExamples =
     testList "Atlassian Examples"
-        [ testCase "PR open" <| fun _ ->
+        [ testCase "PR open" <| fun () ->
             let src = File.ReadAllText "testdata/pr-open.json"
             match Decode.fromString PullRequestEvent.decoder src with
             | Ok(actual) ->
@@ -171,7 +165,7 @@ let atlassianExamples =
                             ("178864a7d521b6f5e720b386b2c2b0ef8563e0dc" |> CommitHash.fromString) @>
                 | x -> failtestNoStackf "should be a open event but got %A" x
             | Error(s) -> failtestNoStackf "error: %A" s
-          testCase "PR modified" <| fun _ ->
+          testCase "PR modified" <| fun () ->
               let src = File.ReadAllText "testdata/pr-modified.json"
               match Decode.fromString PullRequestEvent.decoder src with
               | Ok(actual) ->
@@ -198,7 +192,7 @@ let atlassianExamples =
                               (CommitHash.fromString "860c4eb4ed0f969b47144234ba13c31c498cca69") @>
                   | x -> failtestNoStackf "should be a modified event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
-          testCase "PR reviewer updated" <| fun _ ->
+          testCase "PR reviewer updated" <| fun () ->
               let src = File.ReadAllText "testdata/pr-reviewers-updated.json"
               match Decode.fromString PullRequestEvent.decoder src with
               | Ok(actual) ->
@@ -223,7 +217,7 @@ let atlassianExamples =
                              |> NonNullString.value = "user@atlassian.com" @>
                   | x -> failtestNoStackf "should be a reviewer updated event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
-          testCase "PR approved" <| fun _ ->
+          testCase "PR approved" <| fun () ->
               let src = File.ReadAllText "testdata/pr-approved.json"
               match Decode.fromString PullRequestEvent.decoder src with
               | Ok(actual) ->
@@ -253,7 +247,7 @@ let atlassianExamples =
                              |> NonNullString.value = "UNAPPROVED" @>
                   | x -> failtestNoStackf "should be an approved event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
-          testCase "PR unapproved" <| fun _ ->
+          testCase "PR unapproved" <| fun () ->
               let src = File.ReadAllText "testdata/pr-unapproved.json"
               match Decode.fromString PullRequestEvent.decoder src with
               | Ok(actual) ->
@@ -284,7 +278,7 @@ let atlassianExamples =
                              |> NonNullString.value = "APPROVED" @>
                   | x -> failtestNoStackf "should be an unapproved event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
-          testCase "PR needs work" <| fun _ ->
+          testCase "PR needs work" <| fun () ->
               let src = File.ReadAllText "testdata/pr-needs-work.json"
               match Decode.fromString PullRequestEvent.decoder src with
               | Ok(actual) ->
@@ -318,7 +312,7 @@ let atlassianExamples =
                              |> NonNullString.value = "UNAPPROVED" @>
                   | x -> failtestNoStackf "should be a needs-work event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
-          testCase "PR merged" <| fun _ ->
+          testCase "PR merged" <| fun () ->
               let src = File.ReadAllText "testdata/pr-merged.json"
               match Decode.fromString PullRequestEvent.decoder src with
               | Ok(actual) ->
@@ -339,7 +333,7 @@ let atlassianExamples =
                               ("8d2ad38c918fa6943859fca2176c89ea98b92a21" |> CommitHash.fromString) @>
                   | x -> failtestNoStackf "should be a merged event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
-          testCase "PR declined" <| fun _ ->
+          testCase "PR declined" <| fun () ->
               let src = File.ReadAllText "testdata/pr-declined.json"
               match Decode.fromString PullRequestEvent.decoder src with
               | Ok(actual) ->
@@ -360,7 +354,7 @@ let atlassianExamples =
                               ("7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" |> CommitHash.fromString) @>
                   | x -> failtestNoStackf "should be a declined event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
-          testCase "PR deleted" <| fun _ ->
+          testCase "PR deleted" <| fun () ->
               let src = File.ReadAllText "testdata/pr-deleted.json"
               match Decode.fromString PullRequestEvent.decoder src with
               | Ok(actual) ->
@@ -381,7 +375,7 @@ let atlassianExamples =
                               ("7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" |> CommitHash.fromString) @>
                   | x -> failtestNoStackf "should be a deleted event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
-          testCase "PR comment added" <| fun _ ->
+          testCase "PR comment added" <| fun () ->
               let src = File.ReadAllText "testdata/pr-comment-added.json"
               match Decode.fromString PullRequestEvent.decoder src with
               | Ok(actual) ->
@@ -410,7 +404,7 @@ let atlassianExamples =
                       test <@ parent = Some(43) @>
                   | x -> failtestNoStackf "should be a comment added event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
-          testCase "PR comment edited" <| fun _ ->
+          testCase "PR comment edited" <| fun () ->
               let src = File.ReadAllText "testdata/pr-comment-edited.json"
               match Decode.fromString PullRequestEvent.decoder src with
               | Ok(actual) ->
@@ -442,7 +436,7 @@ let atlassianExamples =
                              |> NonNullString.value = "I am a PR comment" @>
                   | x -> failtestNoStackf "should be a comment deleted event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
-          testCase "PR comment deleted" <| fun _ ->
+          testCase "PR comment deleted" <| fun () ->
               let src = File.ReadAllText "testdata/pr-comment-deleted.json"
               match Decode.fromString PullRequestEvent.decoder src with
               | Ok(actual) ->
