@@ -8,13 +8,13 @@ open BitBucketEvent.Types.Primitives
 open Thoth.Json.Net
 
 type User =
-    { Name: NonNullString.T
-      Email: NonNullString.T
+    { Name: NonNullString
+      Email: NonNullString
       Id: int
-      DisplayName: NonNullString.T
+      DisplayName: NonNullString
       Active: bool
-      Slug: NonNullString.T
-      Type: NonNullString.T }
+      Slug: NonNullString
+      Type: NonNullString }
 
 /// The default value
 let def: User =

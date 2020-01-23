@@ -11,9 +11,9 @@ open Thoth.Json.Net
 
 type Participant =
     { User: User.User
-      Role: NonNullString.T
+      Role: NonNullString
       Approved: bool
-      Status: NonNullString.T
+      Status: NonNullString
       LastReviewedCommit: CommitHash option }
 
 let def: Participant =
@@ -34,8 +34,8 @@ let decoder: Decoder<Participant> =
 let toJsonValue (x: Participant): JsonValue =
     let slots =
         [ _User, x.User |> User.toJsonValue
-          _Role, x.Role |> NonNullString.toJsonValue
+          _Role, (x.Role |> NonNullString.toJsonValue)
           _Approved, x.Approved |> Encode.bool
-          _Status, x.Status |> NonNullString.toJsonValue
+          _Status, (x.Status |> NonNullString.toJsonValue)
           if x.LastReviewedCommit.IsSome then _LastReviewedCommit, x.LastReviewedCommit.Value |> CommitHash.toJsonValue ]
     Encode.object slots

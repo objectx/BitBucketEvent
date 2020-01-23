@@ -15,9 +15,9 @@ open Thoth.Json.Net
 module Generator =
     type UserGen() =
 
-        static member NonNullString(): Arbitrary<Primitives.NonNullString.T> =
+        static member NonNullString(): Arbitrary<NonNullString> =
             Arb.generate<string>
-            |> Gen.map Primitives.NonNullString.create
+            |> Gen.map (fun x -> NonNullString.create x)
             |> Arb.fromGen
 
         static member Ownership(): Arbitrary<Project.Ownership> =
@@ -27,8 +27,8 @@ module Generator =
                   gu |> Gen.map Project.Ownership.Owned ]
             |> Arb.fromGen
 
-        static member Timestamp(): Arbitrary<Primitives.Timestamp.T> =
-            Primitives.Timestamp.create <!> Arb.generate<DateTimeOffset> |> Arb.fromGen
+        static member Timestamp(): Arbitrary<Primitives.Timestamp> =
+            Gen.map Timestamp.create Arb.generate<DateTimeOffset> |> Arb.fromGen
 
 let config = { FsCheckConfig.defaultConfig with arbitrary = [ typeof<Generator.UserGen> ] }
 

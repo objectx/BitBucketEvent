@@ -9,8 +9,8 @@ open Thoth.Json.Net
 
 
 type Reference =
-    { Id: NonNullString.T
-      DisplayId: NonNullString.T
+    { Id: NonNullString
+      DisplayId: NonNullString
       LatestCommit: CommitHash.CommitHash
       Repository: Repository.Repository }
 
@@ -29,7 +29,7 @@ let decoder: Decoder<Reference> =
 
 let toJsonValue (x: Reference): JsonValue =
     Encode.object
-        [ _Id, x.Id |> NonNullString.toJsonValue
-          _DisplayId, x.DisplayId |> NonNullString.toJsonValue
+        [ _Id, (x.Id |> NonNullString.toJsonValue)
+          _DisplayId, x.DisplayId.asJsonValue
           _LatestCommit, x.LatestCommit |> CommitHash.toJsonValue
           _Repository, x.Repository |> Repository.toJsonValue ]

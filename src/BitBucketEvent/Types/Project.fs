@@ -12,10 +12,10 @@ type Ownership =
     | Owned of User.User
 
 type Project =
-    { Key: NonNullString.T
+    { Key: NonNullString
       Id: int
-      Name: NonNullString.T
-      Type: NonNullString.T
+      Name: NonNullString
+      Type: NonNullString
       Owner: Ownership }
 
 let def: Project =

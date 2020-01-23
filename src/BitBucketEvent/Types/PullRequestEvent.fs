@@ -14,9 +14,9 @@ open Thoth.Json.Net
 
 module Target =
     type Target =
-        { Id: NonNullString.T
-          DisplayId: NonNullString.T
-          Type: NonNullString.T
+        { Id: NonNullString
+          DisplayId: NonNullString
+          Type: NonNullString
           LatestCommit: CommitHash.CommitHash
           LatestChangeset: CommitHash.CommitHash }
 
@@ -30,11 +30,11 @@ module Target =
 
     let toJsonValue (x: Target): JsonValue =
         Encode.object
-            [ _Id, x.Id |> NonNullString.toJsonValue
-              (_DisplayId, x.DisplayId |> NonNullString.toJsonValue)
-              (_Type, x.Type |> NonNullString.toJsonValue)
-              (_LatestCommit, x.LatestCommit |> CommitHash.toJsonValue)
-              (_LatestChangeset, x.LatestChangeset |> CommitHash.toJsonValue) ]
+            [ _Id, (x.Id |> NonNullString.toJsonValue)
+              _DisplayId, (x.DisplayId |> NonNullString.toJsonValue)
+              _Type, (x.Type |> NonNullString.toJsonValue)
+              _LatestCommit, (x.LatestCommit |> CommitHash.toJsonValue)
+              _LatestChangeset, (x.LatestChangeset |> CommitHash.toJsonValue) ]
 
 
 type Common =
@@ -50,16 +50,16 @@ type Common =
 
 type PullRequestEvent =
     | Opened of common: Common
-    | Modified of common: Common * previousTitle: NonNullString.T * previousDescription: NonNullString.T * previousTarget: Target.Target
+    | Modified of common: Common * previousTitle: NonNullString * previousDescription: NonNullString * previousTarget: Target.Target
     | ReviewersUpdated of common: Common * addedReviewers: User.User array * removedReviewers: User.User array
-    | Approved of common: Common * participant: Participant.Participant * previousStatus: NonNullString.T
-    | Unapproved of common: Common * participant: Participant.Participant * previousStatus: NonNullString.T
-    | NeedsWork of common: Common * participant: Participant.Participant * previousStatus: NonNullString.T
+    | Approved of common: Common * participant: Participant.Participant * previousStatus: NonNullString
+    | Unapproved of common: Common * participant: Participant.Participant * previousStatus: NonNullString
+    | NeedsWork of common: Common * participant: Participant.Participant * previousStatus: NonNullString
     | Merged of common: Common
     | Declined of common: Common
     | Deleted of common: Common
     | CommentAdded of common: Common * comment: Comment.Comment * commentParentId: int option
-    | CommentEdited of common: Common * comment: Comment.Comment * commentParentId: int option * previousComment: NonNullString.T
+    | CommentEdited of common: Common * comment: Comment.Comment * commentParentId: int option * previousComment: NonNullString
     | CommentDeleted of common: Common * comment: Comment.Comment * _CommentParentId: int option
 
 let decoder: Decoder<PullRequestEvent> =
@@ -121,9 +121,9 @@ let toJsonValue x =
     | Modified(common, prevTitle, prevDesc, prevTarget) ->
         preamble _PR.Modified common
         |> Seq.append
-            [ _PreviousTitle, prevTitle |> NonNullString.toJsonValue
-              _PreviousDescription, prevDesc |> NonNullString.toJsonValue
-              _PreviousTarget, prevTarget |> Target.toJsonValue ]
+            [ _PreviousTitle, (prevTitle |> NonNullString.toJsonValue)
+              _PreviousDescription, (prevDesc |> NonNullString.toJsonValue)
+              _PreviousTarget, (prevTarget |> Target.toJsonValue) ]
         |> encode
     | ReviewersUpdated(common, added, removed) ->
         preamble _PR.ReviewerUpdated common
@@ -141,19 +141,19 @@ let toJsonValue x =
         preamble _PR.Approved common
         |> Seq.append
             [ _Participant, participant |> Participant.toJsonValue
-              _PreviousStatus, status |> NonNullString.toJsonValue ]
+              _PreviousStatus, (status |> NonNullString.toJsonValue) ]
         |> encode
     | Unapproved(common, participant, status) ->
         preamble _PR.Unapproved common
         |> Seq.append
             [ _Participant, participant |> Participant.toJsonValue
-              _PreviousStatus, status |> NonNullString.toJsonValue ]
+              _PreviousStatus, (status |> NonNullString.toJsonValue) ]
         |> encode
     | NeedsWork(common, participant, status) ->
         preamble _PR.NeedsWork common
         |> Seq.append
             [ _Participant, participant |> Participant.toJsonValue
-              _PreviousStatus, status |> NonNullString.toJsonValue ]
+              _PreviousStatus, (status |> NonNullString.toJsonValue) ]
         |> encode
     | Merged(common) ->
         preamble _PR.Merged common |> encode
@@ -171,7 +171,7 @@ let toJsonValue x =
         preamble _PR.CommentEdited common
         |> Seq.append
             [ _Comment, comment |> Comment.toJsonValue
-              _PreviousComment, prevText |> NonNullString.toJsonValue
+              _PreviousComment, (prevText |> NonNullString.toJsonValue)
               _CommentParentId, parent |> Encode.option Encode.int ]
         |> encode
     | CommentDeleted(common, comment, parent) ->

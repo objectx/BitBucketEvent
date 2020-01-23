@@ -10,12 +10,12 @@ open Thoth.Json.Net
 
 
 type Repository =
-    { Slug: NonNullString.T
+    { Slug: NonNullString
       Id: int
-      Name: NonNullString.T
-      ScmId: NonNullString.T
-      State: NonNullString.T
-      StatusMessage: NonNullString.T
+      Name: NonNullString
+      ScmId: NonNullString
+      State: NonNullString
+      StatusMessage: NonNullString
       Forkable: bool
       Project: Project
       Public: bool }

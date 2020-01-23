@@ -12,8 +12,8 @@ open Thoth.Json.Net
 type PullRequest =
     { Id: int
       Version: int
-      Title: NonNullString.T
-      State: NonNullString.T
+      Title: NonNullString
+      State: NonNullString
       Open: bool
       Closed: bool
       CreatedDate: System.DateTimeOffset
@@ -63,8 +63,8 @@ let toJsonValue (x: PullRequest): JsonValue =
     Encode.object
         [ _Id, x.Id |> Encode.int
           _Version, x.Version |> Encode.int
-          _Title, x.Title |> NonNullString.toJsonValue
-          _State, x.State |> NonNullString.toJsonValue
+          _Title, (x.Title |> NonNullString.toJsonValue)
+          _State, (x.State |> NonNullString.toJsonValue)
           _Open, x.Open |> Encode.bool
           _Closed, x.Closed |> Encode.bool
           _CreatedDate, x.CreatedDate.ToUnixTimeMilliseconds() |> Encode.int64

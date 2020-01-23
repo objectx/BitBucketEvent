@@ -12,10 +12,10 @@ open Thoth.Json.Net
 type Comment =
     { Id: int
       Version: int
-      Text: NonNullString.T
+      Text: NonNullString
       Author: User.User
-      CreatedDate: Timestamp.T
-      UpdatedDate: Timestamp.T }
+      CreatedDate: Timestamp
+      UpdatedDate: Timestamp }
 
 let decoder: Decoder<Comment> =
     Decode.object <| fun get ->
@@ -30,7 +30,7 @@ let toJsonValue (x: Comment): JsonValue =
     Encode.object
         [ _Id, x.Id |> Encode.int
           _Version, x.Version |> Encode.int
-          _Text, x.Text |> NonNullString.toJsonValue
+          _Text, (x.Text |> NonNullString.toJsonValue)
           _Author, x.Author |> User.toJsonValue
-          _CreatedDate, x.CreatedDate |> Timestamp.toJsonValue
-          _UpdatedDate, x.UpdatedDate |> Timestamp.toJsonValue ]
+          _CreatedDate, (x.CreatedDate |> Timestamp.toJsonValue)
+          _UpdatedDate, (x.UpdatedDate |> Timestamp.toJsonValue) ]
