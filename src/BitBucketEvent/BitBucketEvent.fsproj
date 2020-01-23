@@ -24,8 +24,9 @@
     <Compile Include="Types\Repository.fs" />
     <Compile Include="Types\Reference.fs" />
     <Compile Include="Types\Participant.fs" />
-    <Compile Include="Types\PullRequest.fs" />
+    <Compile Include="Types\PullRequestDescription.fs" />
     <Compile Include="Types\Comment.fs" />
+    <Compile Include="Types\Target.fs" />
     <Compile Include="Types\PullRequestEvent.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>

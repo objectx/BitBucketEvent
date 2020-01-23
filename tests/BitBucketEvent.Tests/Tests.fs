@@ -15,129 +15,113 @@ open Thoth.Json.Net
 module Generator =
     type UserGen() =
 
-        static member NonNullString(): Arbitrary<Primitives.NonNullString.T> =
+        static member NonNullString(): Arbitrary<NonNullString> =
             Arb.generate<string>
-            |> Gen.map Primitives.NonNullString.create
+            |> Gen.map NonNullString.create
             |> Arb.fromGen
 
-        static member Ownership(): Arbitrary<Project.Ownership> =
-            let gu = Arb.generate<User.User>
+
+        static member CommitHash(): Arbitrary<CommitHash> =
+            Arb.generate<FixedLengthArray<byte>>
+            |> Gen.map (fun x -> x.Get |> CommitHash.create)
+            |> Arb.fromGen
+
+
+        static member Ownership(): Arbitrary<Ownership> =
+            let gu = Arb.generate<User>
             Gen.oneof
-                [ Gen.constant Project.Ownership.Public
-                  gu |> Gen.map Project.Ownership.Owned ]
+                [ Gen.constant Ownership.Public
+                  gu |> Gen.map Ownership.Owned ]
             |> Arb.fromGen
 
-        static member Timestamp(): Arbitrary<Primitives.Timestamp.T> =
-            Primitives.Timestamp.create <!> Arb.generate<DateTimeOffset> |> Arb.fromGen
+        static member Timestamp(): Arbitrary<Primitives.Timestamp> =
+            Gen.map Timestamp.create Arb.generate<DateTimeOffset> |> Arb.fromGen
 
 let config = { FsCheckConfig.defaultConfig with arbitrary = [ typeof<Generator.UserGen> ] }
 
 let private check x =
     (sprintf "expr: %A" (x |> unquote)) @| (x |> eval)
 
+
 [<Tests>]
 let commitHashTest =
     testList "Test CommitHash"
         [ testCase "1 byte" <| fun () ->
             let v = CommitHash.fromString "AB"
-            test <@ v = [| 0xABuy |] @>
+            test <@ v = ([| 0xABuy |] |> CommitHash.create) @>
           testCase "2 byte" <| fun () ->
               let v = CommitHash.fromString "AbCd"
-              test <@ v = [| 0xABuy; 0xCDuy |] @>
+              test <@ v = ([| 0xABuy; 0xCDuy |] |> CommitHash.create) @>
           testCase "bad character" <| fun () -> raises<exn> <@ CommitHash.fromString "AbCdE_" |> ignore @>
           testCase "odd length input" <| fun () -> raises<exn> <@ CommitHash.fromString "AbCdE" |> ignore @>
-          testPropertyWithConfig config "roundtrip" <| fun (x: byte array) ->
-              let s = CommitHash.toString x
-              let actual = CommitHash.fromString s
+          testPropertyWithConfig config "roundtrip" <| fun (x: CommitHash) ->
+              let s = x |> CommitHash.toString
+              let actual = s |> CommitHash.fromString
               // eprintfn "s = %s" s
               check <@ actual = x @> ]
 
 [<Tests>]
 let tests =
     testList "isomorphism"
-        [ testPropertyWithConfig config "user" <| fun (x: User.User) ->
-            let v =
-                x
-                |> User.toJsonValue
-                |> Encode.toString 4
+        [ testPropertyWithConfig config "user" <| fun (x: User) ->
+            let v = x.asJsonValue |> Encode.toString 4
             // eprintfn "v = %s" v
             match v |> Decode.fromString User.decoder with
             | Ok(actual) ->
                 check <@ actual = x @>
             | Error(s) ->
                 failtestNoStackf "error: %s" s
-          testPropertyWithConfig config "project" <| fun (x: Project.Project) ->
-              let v =
-                  x
-                  |> Project.toJsonValue
-                  |> Encode.toString 4
+          testPropertyWithConfig config "project" <| fun (x: Project) ->
+              let v = x.asJsonValue |> Encode.toString 4
               // eprintfn "v = %s" v
               match v |> Decode.fromString Project.decoder with
               | Ok(actual) ->
                   check <@ actual = x @>
               | Error(s) ->
                   failtestNoStackf "error: %s" s
-          testPropertyWithConfig config "repository" <| fun (x: Repository.Repository) ->
-              let v =
-                  x
-                  |> Repository.toJsonValue
-                  |> Encode.toString 4
+          testPropertyWithConfig config "repository" <| fun (x: Repository) ->
+              let v = x.asJsonValue |> Encode.toString 4
               // eprintfn "v = %s" v
               match v |> Decode.fromString Repository.decoder with
               | Ok(actual) ->
                   check <@ actual = x @>
               | Error(s) ->
                   failtestNoStackf "error: %s" s
-          testPropertyWithConfig config "reference" <| fun (x: Reference.Reference) ->
-              let v =
-                  x
-                  |> Reference.toJsonValue
-                  |> Encode.toString 4
+          testPropertyWithConfig config "reference" <| fun (x: Reference) ->
+              let v = x.asJsonValue |> Encode.toString 4
               // eprintfn "v = %s" v
               match v |> Decode.fromString Reference.decoder with
               | Ok(actual) ->
                   check <@ actual = x @>
               | Error(s) ->
                   failtestNoStackf "error: %s" s
-          testPropertyWithConfig config "participant" <| fun (x: Participant.Participant) ->
-              let v =
-                  x
-                  |> Participant.toJsonValue
-                  |> Encode.toString 4
+          testPropertyWithConfig config "participant" <| fun (x: Participant) ->
+              let v = x.asJsonValue |> Encode.toString 4
               // eprintfn "v = %s" v
               match v |> Decode.fromString Participant.decoder with
               | Ok(actual) ->
                   check <@ actual = x @>
               | Error(s) ->
                   failtestNoStackf "error: %s" s
-          testPropertyWithConfig config "comment" <| fun (x: Comment.Comment) ->
-              let v =
-                  x
-                  |> Comment.toJsonValue
-                  |> Encode.toString 4
+          testPropertyWithConfig config "comment" <| fun (x: Comment) ->
+              let v = x.asJsonValue |> Encode.toString 4
               // eprintfn "v = %s" v
               match v |> Decode.fromString Comment.decoder with
               | Ok(actual) ->
                   check <@ actual = x @>
               | Error(s) ->
                   failtestNoStackf "error: %s" s
-          testPropertyWithConfig config "pull-request" <| fun (x: PullRequest.PullRequest) ->
-              let v =
-                  x
-                  |> PullRequest.toJsonValue
-                  |> Encode.toString 4
+          testPropertyWithConfig config "pull-request" <| fun (x: PullRequestDescription) ->
+              let v = x.asJsonValue |> Encode.toString 4
               // eprintfn "v = %s" v
-              match v |> Decode.fromString PullRequest.decoder with
+              match v |> Decode.fromString PullRequestDescription.decoder with
               | Ok(actual) ->
                   check <@ actual = x @>
               | Error(s) ->
                   failtestNoStackf "error: %s" s
-          testPropertyWithConfig config "pull-request event" <| fun (x: PullRequestEvent.PullRequestEvent) ->
-              let v =
-                  x
-                  |> PullRequestEvent.toJsonValue
-                  |> Encode.toString 4
-              match v |> Decode.fromString PullRequestEvent.decoder with
+          testPropertyWithConfig { config with maxTest = 4 * config.maxTest } "pull-request event" <| fun (x: PullRequest.Event) ->
+              let v = x.asJsonValue |> Encode.toString 4
+              match v |> Decode.fromString PullRequest.Event.decoder with
               | Ok(actual) ->
                   check <@ actual = x @>
               // Expect.equal actual x "should be equal"
@@ -149,10 +133,10 @@ let atlassianExamples =
     testList "Atlassian Examples"
         [ testCase "PR open" <| fun () ->
             let src = File.ReadAllText "testdata/pr-open.json"
-            match Decode.fromString PullRequestEvent.decoder src with
+            match Decode.fromString PullRequest.Event.decoder src with
             | Ok(actual) ->
                 match actual with
-                | PullRequestEvent.Opened(common) ->
+                | PullRequest.Event.Opened(common) ->
                     test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T09:58:11+1000")) @>
                     test
                         <@ common.Actor.Email
@@ -167,10 +151,10 @@ let atlassianExamples =
             | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR modified" <| fun () ->
               let src = File.ReadAllText "testdata/pr-modified.json"
-              match Decode.fromString PullRequestEvent.decoder src with
+              match Decode.fromString PullRequest.Event.decoder src with
               | Ok(actual) ->
                   match actual with
-                  | PullRequestEvent.Modified(common, prevTitle, prevDesc, prevTarget) ->
+                  | PullRequest.Event.Modified(common, prevTitle, prevDesc, prevTarget) ->
                       test <@ common.Date = (DateTimeOffset.Parse("2018-04-24T10:15:30+1000")) @>
                       test
                           <@ common.Actor.Email
@@ -194,10 +178,10 @@ let atlassianExamples =
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR reviewer updated" <| fun () ->
               let src = File.ReadAllText "testdata/pr-reviewers-updated.json"
-              match Decode.fromString PullRequestEvent.decoder src with
+              match Decode.fromString PullRequest.Event.decoder src with
               | Ok(actual) ->
                   match actual with
-                  | PullRequestEvent.ReviewersUpdated(common, added, removed) ->
+                  | PullRequest.Event.ReviewersUpdated(common, added, removed) ->
                       test <@ common.Date = (DateTimeOffset.Parse("2018-04-24T10:20:07+1000")) @>
                       test
                           <@ common.Actor.Email
@@ -219,10 +203,10 @@ let atlassianExamples =
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR approved" <| fun () ->
               let src = File.ReadAllText "testdata/pr-approved.json"
-              match Decode.fromString PullRequestEvent.decoder src with
+              match Decode.fromString PullRequest.Event.decoder src with
               | Ok(actual) ->
                   match actual with
-                  | PullRequestEvent.Approved(common, participant, status) ->
+                  | PullRequest.Event.Approved(common, participant, status) ->
                       test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T10:10:01+1000")) @>
                       test
                           <@ common.Actor.Email
@@ -249,10 +233,10 @@ let atlassianExamples =
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR unapproved" <| fun () ->
               let src = File.ReadAllText "testdata/pr-unapproved.json"
-              match Decode.fromString PullRequestEvent.decoder src with
+              match Decode.fromString PullRequest.Event.decoder src with
               | Ok(actual) ->
                   match actual with
-                  | PullRequestEvent.Unapproved(common, participant, status) ->
+                  | PullRequest.Event.Unapproved(common, participant, status) ->
                       test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T10:13:43+1000")) @>
                       test
                           <@ common.Actor.Email
@@ -280,10 +264,10 @@ let atlassianExamples =
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR needs work" <| fun () ->
               let src = File.ReadAllText "testdata/pr-needs-work.json"
-              match Decode.fromString PullRequestEvent.decoder src with
+              match Decode.fromString PullRequest.Event.decoder src with
               | Ok(actual) ->
                   match actual with
-                  | PullRequestEvent.NeedsWork(common, participant, status) ->
+                  | PullRequest.Event.NeedsWork(common, participant, status) ->
                       test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T10:14:47+1000")) @>
                       test
                           <@ common.Actor.Email
@@ -314,10 +298,10 @@ let atlassianExamples =
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR merged" <| fun () ->
               let src = File.ReadAllText "testdata/pr-merged.json"
-              match Decode.fromString PullRequestEvent.decoder src with
+              match Decode.fromString PullRequest.Event.decoder src with
               | Ok(actual) ->
                   match actual with
-                  | PullRequestEvent.Merged(common) ->
+                  | PullRequest.Event.Merged(common) ->
                       test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T10:39:36+1000")) @>
                       test
                           <@ common.Actor.Email
@@ -335,10 +319,10 @@ let atlassianExamples =
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR declined" <| fun () ->
               let src = File.ReadAllText "testdata/pr-declined.json"
-              match Decode.fromString PullRequestEvent.decoder src with
+              match Decode.fromString PullRequest.Event.decoder src with
               | Ok(actual) ->
                   match actual with
-                  | PullRequestEvent.Declined(common) ->
+                  | PullRequest.Event.Declined(common) ->
                       test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:14:43+1000")) @>
                       test
                           <@ common.Actor.Email
@@ -356,10 +340,10 @@ let atlassianExamples =
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR deleted" <| fun () ->
               let src = File.ReadAllText "testdata/pr-deleted.json"
-              match Decode.fromString PullRequestEvent.decoder src with
+              match Decode.fromString PullRequest.Event.decoder src with
               | Ok(actual) ->
                   match actual with
-                  | PullRequestEvent.Deleted(common) ->
+                  | PullRequest.Event.Deleted(common) ->
                       test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:16:17+1000")) @>
                       test
                           <@ common.Actor.Email
@@ -377,10 +361,10 @@ let atlassianExamples =
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR comment added" <| fun () ->
               let src = File.ReadAllText "testdata/pr-comment-added.json"
-              match Decode.fromString PullRequestEvent.decoder src with
+              match Decode.fromString PullRequest.Event.decoder src with
               | Ok(actual) ->
                   match actual with
-                  | PullRequestEvent.CommentAdded(common, comment, parent) ->
+                  | PullRequest.Event.CommentAdded(common, comment, parent) ->
                       test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:21:06+1000")) @>
                       test
                           <@ common.Actor.Email
@@ -406,10 +390,10 @@ let atlassianExamples =
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR comment edited" <| fun () ->
               let src = File.ReadAllText "testdata/pr-comment-edited.json"
-              match Decode.fromString PullRequestEvent.decoder src with
+              match Decode.fromString PullRequest.Event.decoder src with
               | Ok(actual) ->
                   match actual with
-                  | PullRequestEvent.CommentEdited(common, comment, parent, prevText) ->
+                  | PullRequest.Event.CommentEdited(common, comment, parent, prevText) ->
                       test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:24:19+1000")) @>
                       test
                           <@ common.Actor.Email
@@ -438,10 +422,10 @@ let atlassianExamples =
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR comment deleted" <| fun () ->
               let src = File.ReadAllText "testdata/pr-comment-deleted.json"
-              match Decode.fromString PullRequestEvent.decoder src with
+              match Decode.fromString PullRequest.Event.decoder src with
               | Ok(actual) ->
                   match actual with
-                  | PullRequestEvent.CommentDeleted(common, comment, parent) ->
+                  | PullRequest.Event.CommentDeleted(common, comment, parent) ->
                       test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:25:47+1000")) @>
                       test
                           <@ common.Actor.Email
