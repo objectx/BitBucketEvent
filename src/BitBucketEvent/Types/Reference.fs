@@ -12,7 +12,7 @@ type Reference =
     { Id: NonNullString
       DisplayId: NonNullString
       LatestCommit: CommitHash
-      Repository: Repository.Repository }
+      Repository: Repository }
 
 let def: Reference =
     { Id = NonNullString.empty
@@ -32,4 +32,4 @@ let toJsonValue (x: Reference): JsonValue =
         [ _Id, (x.Id |> NonNullString.toJsonValue)
           _DisplayId, x.DisplayId.asJsonValue
           _LatestCommit, x.LatestCommit |> CommitHash.toJsonValue
-          _Repository, x.Repository |> Repository.toJsonValue ]
+          _Repository, x.Repository.asJsonValue ]
