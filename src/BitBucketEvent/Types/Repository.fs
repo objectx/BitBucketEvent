@@ -44,12 +44,12 @@ type Repository =
 
     static member toJsonValue (x: Repository): JsonValue =
         Encode.object
-            [ _Slug, x.Slug |> NonNullString.toJsonValue
+            [ _Slug, x.Slug.asJsonValue
               _Id, x.Id |> Encode.int
-              _Name, x.Name |> NonNullString.toJsonValue
-              _ScmId, x.ScmId |> NonNullString.toJsonValue
-              _State, x.State |> NonNullString.toJsonValue
-              _StatusMessage, x.StatusMessage |> NonNullString.toJsonValue
+              _Name, x.Name.asJsonValue
+              _ScmId, x.ScmId.asJsonValue
+              _State, x.State.asJsonValue
+              _StatusMessage, x.StatusMessage.asJsonValue
               _Forkable, x.Forkable |> Encode.bool
               _Project, x.Project.asJsonValue
               _Public, x.Public |> Encode.bool ]

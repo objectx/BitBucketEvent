@@ -37,12 +37,12 @@ type User =
 
     static member toJsonValue (x: User): JsonValue =
         Encode.object
-            [ _Name, x.Name |> NonNullString.toJsonValue
-              _EmailAddress, x.Email |> NonNullString.toJsonValue
+            [ _Name, x.Name.asJsonValue
+              _EmailAddress, x.Email.asJsonValue
               _Id, x.Id |> Encode.int
-              _DisplayName, x.DisplayName |> NonNullString.toJsonValue
+              _DisplayName, x.DisplayName.asJsonValue
               _Active, x.Active |> Encode.bool
-              _Slug, x.Slug |> NonNullString.toJsonValue
-              _Type, x.Type |> NonNullString.toJsonValue ]
+              _Slug, x.Slug.asJsonValue
+              _Type, x.Type.asJsonValue ]
 
     member inline self.asJsonValue = self |> User.toJsonValue

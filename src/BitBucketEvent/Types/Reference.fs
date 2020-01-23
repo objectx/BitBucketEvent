@@ -29,9 +29,9 @@ type Reference =
 
     static member toJsonValue (x: Reference): JsonValue =
         Encode.object
-            [ _Id, (x.Id |> NonNullString.toJsonValue)
+            [ _Id, x.Id.asJsonValue
               _DisplayId, x.DisplayId.asJsonValue
-              _LatestCommit, x.LatestCommit |> CommitHash.toJsonValue
+              _LatestCommit, x.LatestCommit.asJsonValue
               _Repository, x.Repository.asJsonValue ]
 
     member inline self.asJsonValue =

@@ -47,17 +47,17 @@ type Project =
         match x.Owner with
         | Public ->
             Encode.object
-                [ _Key, x.Key |> NonNullString.toJsonValue
+                [ _Key, x.Key.asJsonValue
                   _Id, x.Id |> Encode.int
-                  _Name, x.Name |> NonNullString.toJsonValue
+                  _Name, x.Name.asJsonValue
                   _Public, true |> Encode.bool
-                  _Type, x.Type |> NonNullString.toJsonValue ]
+                  _Type, x.Type.asJsonValue ]
         | Owned owner ->
             Encode.object
-                [ _Key, x.Key |> NonNullString.toJsonValue
+                [ _Key, x.Key.asJsonValue
                   _Id, x.Id |> Encode.int
-                  _Name, x.Name |> NonNullString.toJsonValue
-                  _Owner, (owner |> User.toJsonValue)
-                  _Type, x.Type |> NonNullString.toJsonValue ]
+                  _Name, x.Name.asJsonValue
+                  _Owner, owner.asJsonValue
+                  _Type, x.Type.asJsonValue ]
 
     member inline self.asJsonValue = self |> Project.toJsonValue
