@@ -3,9 +3,9 @@
 //
 namespace BitBucketEvent.Types
 
-open BitBucketEvent.Types.Literals
-open BitBucketEvent.Types.Primitives
+open BitBucketEvent.Literals
 open Thoth.Json.Net
+
 
 [<Struct>]
 type Ownership =
@@ -19,14 +19,15 @@ type Project =
       Type: NonNullString
       Owner: Ownership }
 
-    static member def: Project =
+module Project =
+    let def: Project =
         { Key = NonNullString.empty
           Id = -1
           Name = NonNullString.empty
           Type = NonNullString.empty
           Owner = Public }
 
-    static member decoder: Decoder<Project> =
+    let decoder: Decoder<Project> =
         Decode.object <| fun get ->
             match get.Optional.Field _Owner User.decoder with
             | None ->
@@ -43,21 +44,22 @@ type Project =
                   Type = get.Required.Field _Type NonNullString.decoder }
 
 
-    static member toJsonValue (x: Project): JsonValue =
+    let toJsonValue (x: Project): JsonValue =
         match x.Owner with
         | Public ->
             Encode.object
-                [ _Key, x.Key.asJsonValue
+                [ _Key, x.Key.AsJsonValue
                   _Id, x.Id |> Encode.int
-                  _Name, x.Name.asJsonValue
+                  _Name, x.Name.AsJsonValue
                   _Public, true |> Encode.bool
-                  _Type, x.Type.asJsonValue ]
+                  _Type, x.Type.AsJsonValue ]
         | Owned owner ->
             Encode.object
-                [ _Key, x.Key.asJsonValue
+                [ _Key, x.Key.AsJsonValue
                   _Id, x.Id |> Encode.int
-                  _Name, x.Name.asJsonValue
-                  _Owner, owner.asJsonValue
-                  _Type, x.Type.asJsonValue ]
+                  _Name, x.Name.AsJsonValue
+                  _Owner, owner.AsJsonValue
+                  _Type, x.Type.AsJsonValue ]
 
-    member inline self.asJsonValue = self |> Project.toJsonValue
+type Project with
+    member inline self.AsJsonValue = self |> Project.toJsonValue

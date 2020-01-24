@@ -3,8 +3,7 @@
 //
 namespace BitBucketEvent.Types
 
-open BitBucketEvent.Types.Literals
-open BitBucketEvent.Types.Primitives
+open BitBucketEvent.Literals
 open Thoth.Json.Net
 
 
@@ -19,7 +18,8 @@ type Repository =
       Project: Project
       Public: bool }
 
-    static member def: Repository =
+module Repository =
+    let def: Repository =
         { Slug = NonNullString.empty
           Id = -1
           Name = NonNullString.empty
@@ -30,7 +30,7 @@ type Repository =
           Project = Project.def
           Public = false }
 
-    static member decoder: Decoder<Repository> =
+    let decoder: Decoder<Repository> =
         Decode.object <| fun get ->
             { Slug = get.Required.Field _Slug NonNullString.decoder
               Id = get.Required.Field _Id Decode.int
@@ -42,16 +42,17 @@ type Repository =
               Project = get.Required.Field _Project Project.decoder
               Public = get.Required.Field _Public Decode.bool }
 
-    static member toJsonValue (x: Repository): JsonValue =
+    let toJsonValue (x: Repository): JsonValue =
         Encode.object
-            [ _Slug, x.Slug.asJsonValue
+            [ _Slug, x.Slug.AsJsonValue
               _Id, x.Id |> Encode.int
-              _Name, x.Name.asJsonValue
-              _ScmId, x.ScmId.asJsonValue
-              _State, x.State.asJsonValue
-              _StatusMessage, x.StatusMessage.asJsonValue
+              _Name, x.Name.AsJsonValue
+              _ScmId, x.ScmId.AsJsonValue
+              _State, x.State.AsJsonValue
+              _StatusMessage, x.StatusMessage.AsJsonValue
               _Forkable, x.Forkable |> Encode.bool
-              _Project, x.Project.asJsonValue
+              _Project, x.Project.AsJsonValue
               _Public, x.Public |> Encode.bool ]
 
-    member inline self.asJsonValue = self |> Repository.toJsonValue
+type Repository with
+    member inline self.AsJsonValue = self |> Repository.toJsonValue

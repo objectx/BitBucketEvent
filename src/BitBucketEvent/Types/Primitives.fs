@@ -1,40 +1,47 @@
 //
 // Copyright (c) 2020  Masashi Fujita  All rights reserved.
 //
-module BitBucketEvent.Types.Primitives
+namespace BitBucketEvent.Types
 
 open System
 open Thoth.Json.Net
 
-[<Struct>]
-type NonNullString =
-    | NonNullString of string
-    static member empty = NonNullString ""
 
-    static member create (s: string): NonNullString =
+[<Struct>]
+type NonNullString = NonNullString of string
+
+[<AutoOpen>]
+module NonNullString =
+    let empty = NonNullString ""
+
+    let create (s: string): NonNullString =
         (if isNull s then ""
          else s)
         |> NonNullString
 
-    static member value (NonNullString s) = s
-    static member decoder: Decoder<NonNullString> = Decode.map NonNullString.create Decode.string
-    static member toJsonValue (NonNullString s) = s |> Encode.string
+    let value (NonNullString s) = s
+    let decoder: Decoder<NonNullString> = Decode.map create Decode.string
+    let toJsonValue (NonNullString s) = s |> Encode.string
 
-    member inline self.asString = self |> NonNullString.value
-    override self.ToString() = self.asString
-    member inline self.asJsonValue = self |> NonNullString.toJsonValue
+type NonNullString with
+    member inline self.AsString = self |> value
+    member inline self.AsJsonValue = self |> toJsonValue
 
 [<Struct>]
-type Timestamp =
-    | Timestamp of DateTimeOffset
-    static member def = DateTimeOffset.FromUnixTimeMilliseconds 0L |> Timestamp
-    static member create (t: DateTimeOffset) = t |> Timestamp
-    static member value (Timestamp t) = t
-    static member toInt (Timestamp t) = t.ToUnixTimeMilliseconds()
-    static member decoder: Decoder<Timestamp> =
-        Decode.map (DateTimeOffset.FromUnixTimeMilliseconds >> Timestamp.create) Decode.int64
-    static member toJsonValue (Timestamp t) =
+type Timestamp = Timestamp of DateTimeOffset
+
+[<AutoOpen>]
+module Timestamp =
+    let def = DateTimeOffset.FromUnixTimeMilliseconds 0L |> Timestamp
+    let create (t: DateTimeOffset) = t |> Timestamp
+    let value (Timestamp t) = t
+    let toInt (Timestamp t) = t.ToUnixTimeMilliseconds()
+    let decoder: Decoder<Timestamp> =
+        Decode.map (DateTimeOffset.FromUnixTimeMilliseconds >> create) Decode.int64
+    let toJsonValue (Timestamp t) =
         t.ToUnixTimeMilliseconds() |> Encode.int64
-    member inline self.asDateTimeOffset = self |> Timestamp.value
-    member inline self.asJsonValue = self |> Timestamp.toJsonValue
-    member inline self.asInt = self |> Timestamp.toInt
+
+type Timestamp with
+    member inline self.AsString = self |> value
+    member inline self.AsInt = self |> toInt
+    member inline self.AsJsonValue = self |> toJsonValue

@@ -3,8 +3,7 @@
 //
 namespace BitBucketEvent.Types
 
-open BitBucketEvent.Types.Literals
-open BitBucketEvent.Types.Primitives
+open BitBucketEvent.Literals
 open Thoth.Json.Net
 
 
@@ -14,25 +13,26 @@ type Reference =
       LatestCommit: CommitHash
       Repository: Repository }
 
-    static member def: Reference =
+module Reference =
+    let def: Reference =
         { Id = NonNullString.empty
           DisplayId = NonNullString.empty
           LatestCommit = CommitHash.def
           Repository = Repository.def }
 
-    static member decoder: Decoder<Reference> =
+    let decoder: Decoder<Reference> =
         Decode.object <| fun get ->
             { Id = get.Required.Field _Id NonNullString.decoder
               DisplayId = get.Required.Field _DisplayId NonNullString.decoder
               LatestCommit = get.Required.Field _LatestCommit CommitHash.decoder
               Repository = get.Required.Field _Repository Repository.decoder }
 
-    static member toJsonValue (x: Reference): JsonValue =
+    let toJsonValue (x: Reference): JsonValue =
         Encode.object
-            [ _Id, x.Id.asJsonValue
-              _DisplayId, x.DisplayId.asJsonValue
-              _LatestCommit, x.LatestCommit.asJsonValue
-              _Repository, x.Repository.asJsonValue ]
+            [ _Id, x.Id.AsJsonValue
+              _DisplayId, x.DisplayId.AsJsonValue
+              _LatestCommit, x.LatestCommit.AsJsonValue
+              _Repository, x.Repository.AsJsonValue ]
 
-    member inline self.asJsonValue =
-        self |> Reference.toJsonValue
+type Reference with
+    member inline self.AsJsonValue = self |> Reference.toJsonValue
