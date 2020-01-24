@@ -7,6 +7,7 @@ open System
 open System.Text
 open Thoth.Json.Net
 
+
 [<Struct>]
 type CommitHash = CommitHash of byte array
 

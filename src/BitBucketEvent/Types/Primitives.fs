@@ -27,6 +27,7 @@ type NonNullString with
     member inline self.AsString = self |> value
     member inline self.AsJsonValue = self |> toJsonValue
 
+
 [<Struct>]
 type Timestamp = Timestamp of DateTimeOffset
 
