@@ -35,95 +35,66 @@ module Generator =
         static member Timestamp(): Arbitrary<Timestamp> =
             Gen.map Timestamp.create Arb.generate<DateTimeOffset> |> Arb.fromGen
 
-let config = { FsCheckConfig.defaultConfig with arbitrary = [ typeof<Generator.UserGen> ] }
+let config =
+    { FsCheckConfig.defaultConfig with
+          arbitrary = [ typeof<Generator.UserGen> ]
+          maxTest = 2000
+          endSize = 200 }
 
-let private check x =
-    (sprintf "expr: %A" (x |> unquote)) @| (x |> eval)
+let private check x = (sprintf "expr: %A" (x |> unquote)) @| (x |> eval)
+
 
 [<Tests>]
-let commitHashTest =
+let testCommitHash =
     testList "Test CommitHash"
         [ testCase "1 byte" <| fun () ->
             let v = CommitHash.fromString "AB"
             test <@ v = ([| 0xABuy |] |> CommitHash.create) @>
-          testCase "2 byte" <| fun () ->
-              let v = CommitHash.fromString "AbCd"
-              test <@ v = ([| 0xABuy; 0xCDuy |] |> CommitHash.create) @>
+          testCase "2 bytes" <| fun () ->
+            let v = CommitHash.fromString "AbCd"
+            test <@ v = ([| 0xABuy; 0xCDuy |] |> CommitHash.create) @>
           testCase "bad character" <| fun () -> raises<exn> <@ CommitHash.fromString "AbCdE_" |> ignore @>
           testCase "odd length input" <| fun () -> raises<exn> <@ CommitHash.fromString "AbCdE" |> ignore @>
           testPropertyWithConfig config "roundtrip" <| fun (x: CommitHash) ->
-              let s = x |> CommitHash.toString
-              let actual = s |> CommitHash.fromString
-              // eprintfn "s = %s" s
-              check <@ actual = x @> ]
+            let s = x |> CommitHash.toString
+            let actual = s |> CommitHash.fromString
+            // eprintfn "s = %s" s
+            Expect.equal actual x "should match" ]
 
 [<Tests>]
-let tests =
-    testList "isomorphism"
+let testIsomorphism =
+    let inline run decoder (x: ^T) =
+        let s = (^T: (member AsJsonValue: JsonValue) x)
+        match s
+              |> Encode.toString 4
+              |> Decode.fromString decoder with
+        | Ok(actual) -> actual
+        | Error(s) -> failtestNoStackf "error: %s" s
+    testList "Check isomorphism"
         [ testPropertyWithConfig config "user" <| fun (x: User) ->
-            let v = x.AsJsonValue |> Encode.toString 4
-            // eprintfn "v = %s" v
-            match v |> Decode.fromString User.decoder with
-            | Ok(actual) ->
-                check <@ actual = x @>
-            | Error(s) ->
-                failtestNoStackf "error: %s" s
+            let actual = x |> run User.decoder
+            Expect.equal actual x "should match"
           testPropertyWithConfig config "project" <| fun (x: Project) ->
-              let v = x.AsJsonValue |> Encode.toString 4
-              // eprintfn "v = %s" v
-              match v |> Decode.fromString Project.decoder with
-              | Ok(actual) ->
-                  check <@ actual = x @>
-              | Error(s) ->
-                  failtestNoStackf "error: %s" s
+            let actual = x |> run Project.decoder
+            Expect.equal actual x "should match"
           testPropertyWithConfig config "repository" <| fun (x: Repository) ->
-              let v = x.AsJsonValue |> Encode.toString 4
-              // eprintfn "v = %s" v
-              match v |> Decode.fromString Repository.decoder with
-              | Ok(actual) ->
-                  check <@ actual = x @>
-              | Error(s) ->
-                  failtestNoStackf "error: %s" s
+            let actual = x |> run Repository.decoder
+            Expect.equal actual x "should match"
           testPropertyWithConfig config "reference" <| fun (x: Reference) ->
-              let v = x.AsJsonValue |> Encode.toString 4
-              // eprintfn "v = %s" v
-              match v |> Decode.fromString Reference.decoder with
-              | Ok(actual) ->
-                  check <@ actual = x @>
-              | Error(s) ->
-                  failtestNoStackf "error: %s" s
+            let actual = x |> run Reference.decoder
+            Expect.equal actual x "should match"
           testPropertyWithConfig config "participant" <| fun (x: Participant) ->
-              let v = x.AsJsonValue |> Encode.toString 4
-              // eprintfn "v = %s" v
-              match v |> Decode.fromString Participant.decoder with
-              | Ok(actual) ->
-                  check <@ actual = x @>
-              | Error(s) ->
-                  failtestNoStackf "error: %s" s
+            let actual = x |> run Participant.decoder
+            Expect.equal actual x "should match"
           testPropertyWithConfig config "comment" <| fun (x: Comment) ->
-              let v = x.AsJsonValue |> Encode.toString 4
-              // eprintfn "v = %s" v
-              match v |> Decode.fromString Comment.decoder with
-              | Ok(actual) ->
-                  check <@ actual = x @>
-              | Error(s) ->
-                  failtestNoStackf "error: %s" s
+            let actual = x |> run Comment.decoder
+            Expect.equal actual x "should match"
           testPropertyWithConfig config "pull-request" <| fun (x: PullRequest) ->
-              let v = x.AsJsonValue |> Encode.toString 4
-              // eprintfn "v = %s" v
-              match v |> Decode.fromString PullRequest.decoder with
-              | Ok(actual) ->
-                  check <@ actual = x @>
-              | Error(s) ->
-                  failtestNoStackf "error: %s" s
-          testPropertyWithConfig { config with maxTest = 4 * config.maxTest } "pull-request event" <| fun (x: Event) ->
-              let v = x.AsJsonValue |> Encode.toString 4
-              match v |> Decode.fromString Event.decoder with
-              | Ok(actual) ->
-                  check <@ actual = x @>
-              // Expect.equal actual x "should be equal"
-              | Error(s) ->
-                  failtestNoStackf "error: %s" s ]
+            let actual = x |> run PullRequest.decoder
+            Expect.equal actual x "should match"
+          testPropertyWithConfig config "pull-request event" <| fun (x: Event) ->
+            let actual = x |> run Event.decoder
+            Expect.equal actual x "should match" ]
 
 [<Tests>]
 let atlassianExamples =
@@ -270,7 +241,8 @@ let atlassianExamples =
                       test <@ common.Actor.Email.AsString = "admin@example.com" @>
                       test <@ common.PullRequest.State.AsString = "DECLINED" @>
                       test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
-                      test <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
+                      test
+                          <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
                   | x -> failtestNoStackf "should be a declined event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR deleted" <| fun () ->
@@ -283,7 +255,8 @@ let atlassianExamples =
                       test <@ common.Actor.Email.AsString = "admin@example.com" @>
                       test <@ common.PullRequest.State.AsString = "OPEN" @>
                       test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
-                      test <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
+                      test
+                          <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
                   | x -> failtestNoStackf "should be a deleted event but got %A" x
               | Error(s) -> failtestNoStackf "error: %A" s
           testCase "PR comment added" <| fun () ->
@@ -296,7 +269,8 @@ let atlassianExamples =
                       test <@ common.Actor.Email.AsString = "admin@example.com" @>
                       test <@ common.PullRequest.State.AsString = "OPEN" @>
                       test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
-                      test <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
+                      test
+                          <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
                       test <@ comment.Id = 62 @>
                       test <@ comment.Text.AsString = "I am a PR comment" @>
                       test <@ comment.CreatedDate.AsInt = 1505784066751L @>
@@ -313,7 +287,8 @@ let atlassianExamples =
                       test <@ common.Actor.Email.AsString = "admin@example.com" @>
                       test <@ common.PullRequest.State.AsString = "OPEN" @>
                       test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
-                      test <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
+                      test
+                          <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
                       test <@ comment.Id = 62 @>
                       test <@ comment.Text.AsString = "I am a PR comment that was edited" @>
                       test <@ comment.CreatedDate.AsInt = 1505784066751L @>
@@ -333,7 +308,8 @@ let atlassianExamples =
                       test <@ common.Actor.Email.AsString = "admin@example.com" @>
                       test <@ common.PullRequest.State.AsString = "OPEN" @>
                       test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
-                      test <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
+                      test
+                          <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
                       test <@ comment.Id = 62 @>
                       test <@ comment.Text.AsString = "I am a PR comment that was edited" @>
                       test <@ comment.CreatedDate.AsInt = 1505784066751L @>

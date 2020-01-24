@@ -15,8 +15,7 @@ module NonNullString =
     let empty = NonNullString ""
 
     let create (s: string): NonNullString =
-        (if isNull s then ""
-         else s)
+        (if isNull s then "" else s)
         |> NonNullString
 
     let value (NonNullString s) = s
