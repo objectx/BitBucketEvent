@@ -1,8 +1,7 @@
 //
 // Copyright (c) 2020  Masashi Fujita  All rights reserved.
 //
-module internal BitBucketEvent.Types.Literals
-
+module BitBucketEvent.Literals
 
 [<Literal>]
 let _Name = "name"

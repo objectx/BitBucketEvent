@@ -8,24 +8,24 @@ open System.Text
 open Thoth.Json.Net
 
 [<Struct>]
-type CommitHash =
-    | CommitHash of byte array
+type CommitHash = CommitHash of byte array
 
-    static member def = CommitHash [||]
+module CommitHash =
+    let def = CommitHash [||]
 
-    static member create (x: byte array): CommitHash =
+    let create (x: byte array): CommitHash =
         x |> CommitHash
 
-    static member value (CommitHash h): byte array =
+    let value (CommitHash h): byte array =
         h
 
-    static member toString (CommitHash h): string =
+    let toString (CommitHash h): string =
         let sb = StringBuilder(2 * h.Length)
         for v in h do
             sb.AppendFormat("{0:x2}", v) |> ignore
         sb.ToString()
 
-    static member fromString (s: string): CommitHash =
+    let fromString (s: string): CommitHash =
         let toHex (x: Char) =
             match x with
             | '0' -> 0uy
@@ -61,12 +61,13 @@ type CommitHash =
             combine (s.[i + 0] |> toHex) (s.[i + 1] |> toHex) |> result.Add
         result.ToArray() |> CommitHash
 
-    static member decoder: Decoder<CommitHash> = Decode.map CommitHash.fromString Decode.string
+    let decoder: Decoder<CommitHash> = Decode.map fromString Decode.string
 
-    static member toJsonValue (h: CommitHash): JsonValue =
+    let toJsonValue (h: CommitHash): JsonValue =
         h
-        |> CommitHash.toString
+        |> toString
         |> Encode.string
 
-    member inline self.asString = self |> CommitHash.toString
-    member inline self.asJsonValue = self |> CommitHash.toJsonValue
+type CommitHash with
+    member inline self.AsString = self |> CommitHash.toString
+    member inline self.AsJsonValue = self |> CommitHash.toJsonValue

@@ -3,8 +3,7 @@
 //
 namespace BitBucketEvent.Types
 
-open BitBucketEvent.Types.Literals
-open BitBucketEvent.Types.Primitives
+open BitBucketEvent.Literals
 open Thoth.Json.Net
 
 
@@ -15,7 +14,8 @@ type Target =
       LatestCommit: CommitHash
       LatestChangeset: CommitHash }
 
-    static member decoder: Decoder<Target> =
+module Target =
+    let decoder: Decoder<Target> =
         Decode.object <| fun get ->
             { Id = get.Required.Field _Id NonNullString.decoder
               DisplayId = get.Required.Field _DisplayId NonNullString.decoder
@@ -23,12 +23,13 @@ type Target =
               LatestCommit = get.Required.Field _LatestCommit CommitHash.decoder
               LatestChangeset = get.Required.Field _LatestChangeset CommitHash.decoder }
 
-    static member toJsonValue (x: Target): JsonValue =
+    let toJsonValue (x: Target): JsonValue =
         Encode.object
-            [ _Id, x.Id.asJsonValue
-              _DisplayId, x.DisplayId.asJsonValue
-              _Type, x.Type.asJsonValue
-              _LatestCommit, x.LatestCommit.asJsonValue
-              _LatestChangeset, x.LatestChangeset.asJsonValue ]
+            [ _Id, x.Id.AsJsonValue
+              _DisplayId, x.DisplayId.AsJsonValue
+              _Type, x.Type.AsJsonValue
+              _LatestCommit, x.LatestCommit.AsJsonValue
+              _LatestChangeset, x.LatestChangeset.AsJsonValue ]
 
-    member inline self.asJsonValue = self |> Target.toJsonValue
+type Target with
+    member inline self.AsJsonValue = self |> Target.toJsonValue

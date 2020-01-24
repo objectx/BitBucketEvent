@@ -3,9 +3,9 @@
 //
 namespace BitBucketEvent.Types
 
-open BitBucketEvent.Types.Literals
-open BitBucketEvent.Types.Primitives
+open BitBucketEvent.Literals
 open Thoth.Json.Net
+
 
 type User =
     { Name: NonNullString
@@ -16,7 +16,8 @@ type User =
       Slug: NonNullString
       Type: NonNullString }
 
-    static member def: User =
+module User =
+    let def: User =
         { Name = NonNullString.empty
           Email = NonNullString.empty
           Id = -1
@@ -25,7 +26,7 @@ type User =
           Slug = NonNullString.empty
           Type = NonNullString.empty }
 
-    static member decoder: Decoder<User> =
+    let decoder: Decoder<User> =
         Decode.object <| fun get ->
             { Name = get.Required.Field _Name NonNullString.decoder
               Email = get.Required.Field _EmailAddress NonNullString.decoder
@@ -35,14 +36,15 @@ type User =
               Slug = get.Required.Field _Slug NonNullString.decoder
               Type = get.Required.Field _Type NonNullString.decoder }
 
-    static member toJsonValue (x: User): JsonValue =
+    let toJsonValue (x: User): JsonValue =
         Encode.object
-            [ _Name, x.Name.asJsonValue
-              _EmailAddress, x.Email.asJsonValue
+            [ _Name, x.Name.AsJsonValue
+              _EmailAddress, x.Email.AsJsonValue
               _Id, x.Id |> Encode.int
-              _DisplayName, x.DisplayName.asJsonValue
+              _DisplayName, x.DisplayName.AsJsonValue
               _Active, x.Active |> Encode.bool
-              _Slug, x.Slug.asJsonValue
-              _Type, x.Type.asJsonValue ]
+              _Slug, x.Slug.AsJsonValue
+              _Type, x.Type.AsJsonValue ]
 
-    member inline self.asJsonValue = self |> User.toJsonValue
+type User with
+    member inline self.AsJsonValue = self |> User.toJsonValue

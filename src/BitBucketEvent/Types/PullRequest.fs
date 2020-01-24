@@ -4,13 +4,12 @@
 namespace BitBucketEvent.Types
 
 open BitBucketEvent.Types
-open BitBucketEvent.Types.Literals
-open BitBucketEvent.Types.Primitives
+open BitBucketEvent.Literals
 open System
 open Thoth.Json.Net
 
 
-type PullRequestDescription =
+type PullRequest =
     { Id: int
       Version: int
       Title: NonNullString
@@ -26,7 +25,8 @@ type PullRequestDescription =
       Reviewers: Participant array
       Participants: Participant array }
 
-    static member def: PullRequestDescription =
+module PullRequest =
+    let def: PullRequest =
         { Id = -1
           Version = -1
           Title = NonNullString.empty
@@ -42,7 +42,7 @@ type PullRequestDescription =
           Reviewers = [||]
           Participants = [||] }
 
-    static member decoder: Decoder<PullRequestDescription> =
+    let decoder: Decoder<PullRequest> =
         Decode.object <| fun get ->
             { Id = get.Required.Field _Id Decode.int
               Version = get.Required.Field _Version Decode.int
@@ -59,22 +59,23 @@ type PullRequestDescription =
               Reviewers = get.Required.Field _Reviewers (Decode.array Participant.decoder)
               Participants = get.Required.Field _Participants (Decode.array Participant.decoder) }
 
-    static member toJsonValue (x: PullRequestDescription): JsonValue =
+    let toJsonValue (x: PullRequest): JsonValue =
         let encodeParticipants = Array.map Participant.toJsonValue >> Encode.array
         Encode.object
             [ _Id, x.Id |> Encode.int
               _Version, x.Version |> Encode.int
-              _Title, x.Title.asJsonValue
-              _State, x.State.asJsonValue
+              _Title, x.Title.AsJsonValue
+              _State, x.State.AsJsonValue
               _Open, x.Open |> Encode.bool
               _Closed, x.Closed |> Encode.bool
-              _CreatedDate, x.CreatedDate.asJsonValue
-              _UpdatedDate, x.UpdatedDate.asJsonValue
-              _FromRef, x.FromRef.asJsonValue
-              _ToRef, x.ToRef.asJsonValue
+              _CreatedDate, x.CreatedDate.AsJsonValue
+              _UpdatedDate, x.UpdatedDate.AsJsonValue
+              _FromRef, x.FromRef.AsJsonValue
+              _ToRef, x.ToRef.AsJsonValue
               _Locked, x.Locked |> Encode.bool
-              _Author, x.Author.asJsonValue
+              _Author, x.Author.AsJsonValue
               _Reviewers, x.Reviewers |> encodeParticipants
               _Participants, x.Participants |> encodeParticipants ]
 
-    member inline self.asJsonValue = self |> PullRequestDescription.toJsonValue
+type PullRequest with
+    member inline self.AsJsonValue = self |> PullRequest.toJsonValue
