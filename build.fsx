@@ -406,7 +406,10 @@ let formatCode _ =
     |> Seq.collect id
     // Ignore AssemblyInfo
     |> Seq.filter(fun f -> f.EndsWith("AssemblyInfo.fs") |> not)
-    |> formatFilesAsync { FormatConfig.FormatConfig.Default with KeepNewlineAfter = true }
+    |> formatFilesAsync
+            { FormatConfig.FormatConfig.Default with
+                KeepNewlineAfter = true
+                PageWidth = 120 }
     |> Async.RunSynchronously
     |> Seq.iter(fun result ->
         match result with
