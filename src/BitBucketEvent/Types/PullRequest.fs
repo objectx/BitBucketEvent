@@ -19,6 +19,7 @@ type PullRequest =
       Closed: bool
       CreatedDate: Timestamp
       UpdatedDate: Timestamp
+      ClosedDate: Timestamp option
       FromRef: Reference
       ToRef: Reference
       Locked: bool
@@ -37,6 +38,7 @@ module PullRequest =
           Closed = false
           CreatedDate = Timestamp.def
           UpdatedDate = Timestamp.def
+          ClosedDate = None
           FromRef = Reference.def
           ToRef = Reference.def
           Locked = false
@@ -55,6 +57,7 @@ module PullRequest =
               Closed = get.Required.Field _Closed Decode.bool
               CreatedDate = get.Required.Field _CreatedDate Timestamp.decoder
               UpdatedDate = get.Required.Field _UpdatedDate Timestamp.decoder
+              ClosedDate = get.Optional.Field _ClosedDate Timestamp.decoder
               FromRef = get.Required.Field _FromRef Reference.decoder
               ToRef = get.Required.Field _ToRef Reference.decoder
               Locked = get.Required.Field _Locked Decode.bool
@@ -74,6 +77,7 @@ module PullRequest =
               _Closed, x.Closed |> Encode.bool
               _CreatedDate, x.CreatedDate.AsJsonValue
               _UpdatedDate, x.UpdatedDate.AsJsonValue
+              if x.ClosedDate.IsSome then (_ClosedDate, x.ClosedDate.Value.AsJsonValue)
               _FromRef, x.FromRef.AsJsonValue
               _ToRef, x.ToRef.AsJsonValue
               _Locked, x.Locked |> Encode.bool

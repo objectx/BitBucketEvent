@@ -94,6 +94,9 @@ let _CreatedDate = "createdDate"
 let _UpdatedDate = "updatedDate"
 
 [<Literal>]
+let _ClosedDate = "closedDate"
+
+[<Literal>]
 let _FromRef = "fromRef"
 
 [<Literal>]
