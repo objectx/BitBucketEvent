@@ -98,221 +98,541 @@ let testIsomorphism =
 
 [<Tests>]
 let atlassianExamples =
+    let run file =
+        let src = File.ReadAllText file
+        match Decode.fromString Event.decoder src with
+        | Ok(result) -> result
+        | Error(s) -> failtestNoStackf "error: %s" s
+
     testList "Atlassian Examples"
         [ testCase "PR open" <| fun () ->
-            let src = File.ReadAllText "testdata/pr-open.json"
-            match Decode.fromString Event.decoder src with
-            | Ok(actual) ->
-                match actual with
-                | Event.Opened(common) ->
-                    test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T09:58:11+1000")) @>
-                    test <@ common.Actor.Email.AsString = "admin@example.com" @>
-                    test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
-                    test
-                        <@ common.PullRequest.ToRef.LatestCommit.AsString = "178864a7d521b6f5e720b386b2c2b0ef8563e0dc" @>
-                | x -> failtestNoStackf "should be a open event but got %A" x
-            | Error(s) -> failtestNoStackf "error: %A" s
+            match "testdata/pr-open.json" |> run with
+            | Event.Opened(common) ->
+                test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T09:58:11+1000")) @>
+                let actor: User =
+                    { Id = 1
+                      Name = "admin" |> NonNullString.create
+                      Email = "admin@example.com" |> NonNullString.create
+                      DisplayName = "Administrator" |> NonNullString.create
+                      Active = true
+                      Slug = "admin" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                Expect.equal common.Actor actor "should match"
+                let pr: PullRequest =
+                    { Id = 1
+                      Version = 0
+                      Title = "a new file added" |> NonNullString.create
+                      Description = None
+                      State = "OPEN" |> NonNullString
+                      Open = true
+                      Closed = false
+                      CreatedDate = 1505779091796L |> Timestamp.fromInt
+                      UpdatedDate = 1505779091796L |> Timestamp.fromInt
+                      FromRef = {
+                          Id = "refs/heads/a-branch" |> NonNullString.create
+                          DisplayId = "a-branch" |> NonNullString.create
+                          LatestCommit = "ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca" |> CommitHash.fromString
+                          Repository = {
+                              Slug = "repository" |> NonNullString.create
+                              Id = 84
+                              Name = "repository" |> NonNullString.create
+                              ScmId = "git" |> NonNullString.create
+                              State = "AVAILABLE" |> NonNullString.create
+                              StatusMessage = "Available" |> NonNullString.create
+                              Forkable = true
+                              Project = {
+                                  Key = "PROJ" |> NonNullString.create
+                                  Id = 84
+                                  Name = "project" |> NonNullString.create
+                                  Owner = Ownership.Public
+                                  Type = "NORMAL" |> NonNullString.create
+                              }
+                              Public = false
+                          }
+                      }
+                      ToRef = {
+                          Id = "refs/heads/master" |> NonNullString.create
+                          DisplayId = "master" |> NonNullString.create
+                          LatestCommit = "178864a7d521b6f5e720b386b2c2b0ef8563e0dc" |> CommitHash.fromString
+                          Repository = {
+                              Slug = "repository" |> NonNullString.create
+                              Id = 84
+                              Name = "repository" |> NonNullString.create
+                              ScmId = "git" |> NonNullString.create
+                              State = "AVAILABLE" |> NonNullString.create
+                              StatusMessage = "Available" |> NonNullString.create
+                              Forkable = true
+                              Project = {
+                                  Key = "PROJ" |> NonNullString.create
+                                  Id = 84
+                                  Name = "project" |> NonNullString.create
+                                  Owner = Ownership.Public
+                                  Type = "NORMAL" |> NonNullString.create
+                              }
+                              Public = false
+                          }
+                      }
+                      Locked = false
+                      Author = {
+                          User = {
+                              Name = "admin" |> NonNullString
+                              Email = "admin@example.com" |> NonNullString
+                              Id = 1
+                              DisplayName = "Administrator" |> NonNullString
+                              Active = true
+                              Slug = "admin" |> NonNullString
+                              Type = "NORMAL" |> NonNullString
+                          }
+                          Role = "AUTHOR" |> NonNullString
+                          Approved = false
+                          Status = "UNAPPROVED" |> NonNullString
+                          LastReviewedCommit = None
+                      }
+                      Reviewers = [||]
+                      Participants = [||] }
+                Expect.equal common.PullRequest pr "should match"
+            | x -> failtestNoStackf "should be a open event but got %A" x
           testCase "PR modified" <| fun () ->
-              let src = File.ReadAllText "testdata/pr-modified.json"
-              match Decode.fromString Event.decoder src with
-              | Ok(actual) ->
-                  match actual with
-                  | Event.Modified(common, prevTitle, prevDesc, prevTarget) ->
-                      test <@ common.Date = (DateTimeOffset.Parse("2018-04-24T10:15:30+1000")) @>
-                      test <@ common.Actor.Email.AsString = "example@atlassian.com" @>
-                      test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
-                      test
-                          <@ common.PullRequest.ToRef.LatestCommit.AsString = "860c4eb4ed0f969b47144234ba13c31c498cca69" @>
-                      test
-                          <@ prevTitle
-                             |> NonNullString.value = "A cool PR" @>
-                      test
-                          <@ prevDesc
-                             |> NonNullString.value = "A neat description" @>
-                      test <@ prevTarget.LatestCommit.AsString = "860c4eb4ed0f969b47144234ba13c31c498cca69" @>
-                  | x -> failtestNoStackf "should be a modified event but got %A" x
-              | Error(s) -> failtestNoStackf "error: %A" s
+            match "testdata/pr-modified.json" |> run with
+            | Event.Modified(common, prevTitle, prevDesc, prevTarget) ->
+                test <@ common.Date = (DateTimeOffset.Parse("2018-04-24T10:15:30+1000")) @>
+                let actor: User =
+                    { Name = "Administrator" |> NonNullString.create
+                      Email = "example@atlassian.com" |> NonNullString.create
+                      Id = 110653
+                      DisplayName = "Administrator" |> NonNullString.create
+                      Active = true
+                      Slug = "pathompson" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                Expect.equal common.Actor actor "should match"
+                let owner: User =
+                    { Name = "Administrator" |> NonNullString
+                      Email = "example@atlassian.com" |> NonNullString
+                      Id = 110653
+                      DisplayName = "Administrator" |> NonNullString.create
+                      Active = true
+                      Slug = "admin" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                let pr: PullRequest =
+                    { Id = 1
+                      Version = 1
+                      Title = "A new title" |> NonNullString.create
+                      Description = Some ("A new description" |> NonNullString.create)
+                      State = "OPEN" |> NonNullString
+                      Open = true
+                      Closed = false
+                      CreatedDate = 1524528879329L |> Timestamp.fromInt
+                      UpdatedDate = 1524528930110L |> Timestamp.fromInt
+                      FromRef = {
+                          Id = "refs/heads/new-branch" |> NonNullString.create
+                          DisplayId = "new-branch" |> NonNullString.create
+                          LatestCommit = "5a705e60111a4213da46839d9cbf4fc43639b771" |> CommitHash.fromString
+                          Repository = {
+                              Slug = "example" |> NonNullString.create
+                              Id = 12087
+                              Name = "example" |> NonNullString.create
+                              ScmId = "git" |> NonNullString.create
+                              State = "AVAILABLE" |> NonNullString.create
+                              StatusMessage = "Available" |> NonNullString.create
+                              Forkable = true
+                              Project = {
+                                  Key = "~ADMIN" |> NonNullString.create
+                                  Id = 8504
+                                  Name = "Administrator" |> NonNullString.create
+                                  Owner = Ownership.Owned owner
+                                  Type = "PERSONAL" |> NonNullString.create
+                              }
+                              Public = false
+                          }
+                      }
+                      ToRef = {
+                          Id = "refs/heads/master" |> NonNullString.create
+                          DisplayId = "master" |> NonNullString.create
+                          LatestCommit = "860c4eb4ed0f969b47144234ba13c31c498cca69" |> CommitHash.fromString
+                          Repository = {
+                              Slug = "example" |> NonNullString.create
+                              Id = 12087
+                              Name = "example" |> NonNullString.create
+                              ScmId = "git" |> NonNullString.create
+                              State = "AVAILABLE" |> NonNullString.create
+                              StatusMessage = "Available" |> NonNullString.create
+                              Forkable = true
+                              Project = {
+                                  Key = "~ADMIN" |> NonNullString.create
+                                  Id = 8504
+                                  Name = "Administrator" |> NonNullString.create
+                                  Owner = Ownership.Owned owner
+                                  Type = "PERSONAL" |> NonNullString.create
+                              }
+                              Public = false
+                          }
+                      }
+                      Locked = false
+                      Author = {
+                          User = {
+                              Name = "Administrator" |> NonNullString
+                              Email = "example@atlassian.com" |> NonNullString
+                              Id = 110653
+                              DisplayName = "Administrator" |> NonNullString
+                              Active = true
+                              Slug = "admin" |> NonNullString
+                              Type = "NORMAL" |> NonNullString
+                          }
+                          Role = "AUTHOR" |> NonNullString
+                          Approved = false
+                          Status = "UNAPPROVED" |> NonNullString
+                          LastReviewedCommit = None
+                      }
+                      Reviewers =
+                          [| { User =
+                                { Name = "User" |> NonNullString.create
+                                  Email = "user@atlassian.com" |> NonNullString.create
+                                  Id = 36303
+                                  DisplayName = "User" |> NonNullString.create
+                                  Active = true
+                                  Slug = "user" |> NonNullString.create
+                                  Type = "NORMAL" |> NonNullString.create }
+                               Role = "REVIEWER" |> NonNullString.create
+                               Approved = false
+                               Status = "UNAPPROVED" |> NonNullString.create
+                               LastReviewedCommit = None } |]
+                      Participants = [||] }
+                Expect.equal common.PullRequest pr "should match"
+                test
+                    <@ prevTitle
+                       |> NonNullString.value = "A cool PR" @>
+                test
+                    <@ prevDesc
+                       |> NonNullString.value = "A neat description" @>
+                test <@ prevTarget.LatestCommit.AsString = "860c4eb4ed0f969b47144234ba13c31c498cca69" @>
+            | x -> failtestNoStackf "should be a modified event but got %A" x
           testCase "PR reviewer updated" <| fun () ->
-              let src = File.ReadAllText "testdata/pr-reviewers-updated.json"
-              match Decode.fromString Event.decoder src with
-              | Ok(actual) ->
-                  match actual with
-                  | Event.ReviewersUpdated(common, added, removed) ->
-                      test <@ common.Date = (DateTimeOffset.Parse("2018-04-24T10:20:07+1000")) @>
-                      test <@ common.Actor.Email.AsString = "admin@atlassian.com" @>
-                      let pr = common.PullRequest
-                      test <@ pr.Author.User.DisplayName.AsString = "Administrator" @>
-                      test <@ pr.ToRef.LatestCommit.AsString = "860c4eb4ed0f969b47144234ba13c31c498cca69" @>
-                      test <@ added.Length = 1 @>
-                      test <@ added.[0].Id = 129659 @>
-                      test <@ removed.Length = 1 @>
-                      test <@ removed.[0].Email.AsString = "user@atlassian.com" @>
-                  | x -> failtestNoStackf "should be a reviewer updated event but got %A" x
-              | Error(s) -> failtestNoStackf "error: %A" s
+            match "testdata/pr-reviewers-updated.json" |> run with
+            | Event.ReviewersUpdated(common, added, removed) ->
+                test <@ common.Date = (DateTimeOffset.Parse("2018-04-24T10:20:07+1000")) @>
+                let actor: User =
+                    { Name = "Administrator" |> NonNullString.create
+                      Email = "admin@atlassian.com" |> NonNullString.create
+                      Id = 110653
+                      DisplayName = "Administrator" |> NonNullString.create
+                      Active = true
+                      Slug = "admin" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                Expect.equal common.Actor actor "should match"
+                let owner: User =
+                    { Name = "admin" |> NonNullString
+                      Email = "example@atlassian.com" |> NonNullString
+                      Id = 110653
+                      DisplayName = "Administrator" |> NonNullString.create
+                      Active = true
+                      Slug = "admin" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                let pr: PullRequest =
+                    { Id = 1
+                      Version = 2
+                      Title = "A title" |> NonNullString.create
+                      Description = Some ("A description" |> NonNullString.create)
+                      State = "OPEN" |> NonNullString
+                      Open = true
+                      Closed = false
+                      CreatedDate = 1524528879329L |> Timestamp.fromInt
+                      UpdatedDate = 1524529207598L |> Timestamp.fromInt
+                      FromRef = {
+                          Id = "refs/heads/new-branch" |> NonNullString.create
+                          DisplayId = "new-branch" |> NonNullString.create
+                          LatestCommit = "5a705e60111a4213da46839d9cbf4fc43639b771" |> CommitHash.fromString
+                          Repository = {
+                              Slug = "example" |> NonNullString.create
+                              Id = 12087
+                              Name = "example" |> NonNullString.create
+                              ScmId = "git" |> NonNullString.create
+                              State = "AVAILABLE" |> NonNullString.create
+                              StatusMessage = "Available" |> NonNullString.create
+                              Forkable = true
+                              Project = {
+                                  Key = "~ADMIN" |> NonNullString.create
+                                  Id = 8504
+                                  Name = "Administrator" |> NonNullString.create
+                                  Owner = Ownership.Owned owner
+                                  Type = "PERSONAL" |> NonNullString.create
+                              }
+                              Public = false
+                          }
+                      }
+                      ToRef = {
+                          Id = "refs/heads/master" |> NonNullString.create
+                          DisplayId = "master" |> NonNullString.create
+                          LatestCommit = "860c4eb4ed0f969b47144234ba13c31c498cca69" |> CommitHash.fromString
+                          Repository = {
+                              Slug = "example" |> NonNullString.create
+                              Id = 12087
+                              Name = "example" |> NonNullString.create
+                              ScmId = "git" |> NonNullString.create
+                              State = "AVAILABLE" |> NonNullString.create
+                              StatusMessage = "Available" |> NonNullString.create
+                              Forkable = true
+                              Project = {
+                                  Key = "~ADMIN" |> NonNullString.create
+                                  Id = 8504
+                                  Name = "Administrator" |> NonNullString.create
+                                  Owner = Ownership.Owned
+                                            {owner with
+                                                Name = "Administrator" |> NonNullString.create
+                                                Email = "admin@atlassian.com" |> NonNullString.create }
+                                  Type = "PERSONAL" |> NonNullString.create
+                              }
+                              Public = false
+                          }
+                      }
+                      Locked = false
+                      Author = {
+                          User = {
+                              Name = "Administrator" |> NonNullString
+                              Email = "admin@atlassian.com" |> NonNullString
+                              Id = 110653
+                              DisplayName = "Administrator" |> NonNullString
+                              Active = true
+                              Slug = "admin" |> NonNullString
+                              Type = "NORMAL" |> NonNullString
+                          }
+                          Role = "AUTHOR" |> NonNullString
+                          Approved = false
+                          Status = "UNAPPROVED" |> NonNullString
+                          LastReviewedCommit = None
+                      }
+                      Reviewers =
+                          [| { User =
+                                { Name = "pathompson_admin" |> NonNullString.create
+                                  Email = "pathompson@atlassian.com" |> NonNullString.create
+                                  Id = 129659
+                                  DisplayName = "Paul Thompson Admin" |> NonNullString.create
+                                  Active = true
+                                  Slug = "pathompson_admin" |> NonNullString.create
+                                  Type = "NORMAL" |> NonNullString.create }
+                               Role = "REVIEWER" |> NonNullString.create
+                               Approved = false
+                               Status = "UNAPPROVED" |> NonNullString.create
+                               LastReviewedCommit = None } |]
+                      Participants = [||] }
+                Expect.equal common.PullRequest pr "should match"
+                test <@ added.Length = 1 @>
+                Expect.equal
+                    added.[0]
+                    { Name = "new user" |> NonNullString.create
+                      Email = "user2@atlassian.com" |> NonNullString.create
+                      Id = 129659
+                      DisplayName = "New User" |> NonNullString.create
+                      Active = true
+                      Slug = "new_user" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                    "should match"
+                test <@ removed.Length = 1 @>
+                Expect.equal
+                    removed.[0]
+                    { Name = "user" |> NonNullString.create
+                      Email = "user@atlassian.com" |> NonNullString.create
+                      Id = 36303
+                      DisplayName = "User" |> NonNullString.create
+                      Active = true
+                      Slug = "user" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                    "should match"
+            | x -> failtestNoStackf "should be a reviewer updated event but got %A" x
           testCase "PR approved" <| fun () ->
-              let src = File.ReadAllText "testdata/pr-approved.json"
-              match Decode.fromString Event.decoder src with
-              | Ok(actual) ->
-                  match actual with
-                  | Event.Approved(common, participant, status) ->
-                      test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T10:10:01+1000")) @>
-                      test <@ common.Actor.Email.AsString = "user@example.com" @>
-                      let pr = common.PullRequest
-                      test <@ pr.Author.User.DisplayName.AsString = "Administrator" @>
-                      test <@ pr.ToRef.LatestCommit.AsString = "178864a7d521b6f5e720b386b2c2b0ef8563e0dc" @>
-                      test <@ participant.User.Id = 2 @>
-                      test <@ participant.Approved = true @>
-                      test
-                          <@ participant.LastReviewedCommit =
-                              Some("ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca" |> CommitHash.fromString) @>
-                      test <@ participant.Status.AsString = "APPROVED" @>
-                      test
-                          <@ status
-                             |> NonNullString.value = "UNAPPROVED" @>
-                  | x -> failtestNoStackf "should be an approved event but got %A" x
-              | Error(s) -> failtestNoStackf "error: %A" s
+            match "testdata/pr-approved.json" |> run with
+            | Event.Approved(common, participant, status) ->
+                test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T10:10:01+1000")) @>
+                let actor: User =
+                    { Name = "user" |> NonNullString.create
+                      Email = "user@example.com" |> NonNullString.create
+                      Id = 2
+                      DisplayName = "User" |> NonNullString.create
+                      Active = true
+                      Slug = "user" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                Expect.equal common.Actor actor "should match"
+                let pr = common.PullRequest
+                test <@ pr.ToRef.LatestCommit.AsString = "178864a7d521b6f5e720b386b2c2b0ef8563e0dc" @>
+                test <@ participant.User.Id = 2 @>
+                test <@ participant.Approved = true @>
+                test
+                    <@ participant.LastReviewedCommit =
+                        Some("ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca" |> CommitHash.fromString) @>
+                test <@ participant.Status.AsString = "APPROVED" @>
+                test
+                    <@ status
+                       |> NonNullString.value = "UNAPPROVED" @>
+            | x -> failtestNoStackf "should be an approved event but got %A" x
           testCase "PR unapproved" <| fun () ->
-              let src = File.ReadAllText "testdata/pr-unapproved.json"
-              match Decode.fromString Event.decoder src with
-              | Ok(actual) ->
-                  match actual with
-                  | Event.Unapproved(common, participant, status) ->
-                      test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T10:13:43+1000")) @>
-                      test <@ common.Actor.Email.AsString = "user@example.com" @>
-                      let pr = common.PullRequest
-                      test <@ pr.Author.User.DisplayName.AsString = "Administrator" @>
-                      test <@ pr.ToRef.LatestCommit.AsString = "178864a7d521b6f5e720b386b2c2b0ef8563e0dc" @>
-                      test <@ participant.User.Id = 2 @>
-                      test <@ participant.Approved = false @>
-                      test
-                          <@ participant.LastReviewedCommit =
-                              Some("ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca" |> CommitHash.fromString) @>
-                      test <@ participant.Status.AsString = "UNAPPROVED" @>
-                      test
-                          <@ status
-                             |> NonNullString.value = "APPROVED" @>
-                  | x -> failtestNoStackf "should be an unapproved event but got %A" x
-              | Error(s) -> failtestNoStackf "error: %A" s
+            match "testdata/pr-unapproved.json" |> run with
+            | Event.Unapproved(common, participant, status) ->
+                test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T10:13:43+1000")) @>
+                let actor: User =
+                    { Name = "user" |> NonNullString.create
+                      Email = "user@example.com" |> NonNullString.create
+                      Id = 2
+                      DisplayName = "User" |> NonNullString.create
+                      Active = true
+                      Slug = "user" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                Expect.equal common.Actor actor "should match"
+                let pr = common.PullRequest
+                test <@ pr.Author.User.DisplayName.AsString = "Administrator" @>
+                test <@ pr.ToRef.LatestCommit.AsString = "178864a7d521b6f5e720b386b2c2b0ef8563e0dc" @>
+                test <@ participant.User.Id = 2 @>
+                test <@ participant.Approved = false @>
+                test
+                    <@ participant.LastReviewedCommit =
+                        Some("ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca" |> CommitHash.fromString) @>
+                test <@ participant.Status.AsString = "UNAPPROVED" @>
+                test
+                    <@ status
+                       |> NonNullString.value = "APPROVED" @>
+            | x -> failtestNoStackf "should be an unapproved event but got %A" x
           testCase "PR needs work" <| fun () ->
-              let src = File.ReadAllText "testdata/pr-needs-work.json"
-              match Decode.fromString Event.decoder src with
-              | Ok(actual) ->
-                  match actual with
-                  | Event.NeedsWork(common, participant, status) ->
-                      test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T10:14:47+1000")) @>
-                      test <@ common.Actor.Email.AsString = "user@example.com" @>
-                      let pr = common.PullRequest
-                      test <@ pr.Author.User.DisplayName.AsString = "Administrator" @>
-                      test <@ pr.ToRef.LatestCommit.AsString = "178864a7d521b6f5e720b386b2c2b0ef8563e0dc" @>
-                      test <@ pr.Reviewers.[0].Status.AsString = "NEEDS_WORK" @>
-                      test <@ participant.User.Id = 2 @>
-                      test <@ participant.Approved = false @>
-                      test
-                          <@ participant.LastReviewedCommit =
-                              Some("ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca" |> CommitHash.fromString) @>
-                      test <@ participant.Status.AsString = "NEEDS_WORK" @>
+            match "testdata/pr-needs-work.json" |> run with
+            | Event.NeedsWork(common, participant, status) ->
+                test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T10:14:47+1000")) @>
+                let actor: User =
+                    { Name = "user" |> NonNullString.create
+                      Email = "user@example.com" |> NonNullString.create
+                      Id = 2
+                      DisplayName = "User" |> NonNullString.create
+                      Active = true
+                      Slug = "user" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                Expect.equal common.Actor actor "should match"
+                let pr = common.PullRequest
+                test <@ pr.Author.User.DisplayName.AsString = "Administrator" @>
+                test <@ pr.ToRef.LatestCommit.AsString = "178864a7d521b6f5e720b386b2c2b0ef8563e0dc" @>
+                test <@ pr.Reviewers.[0].Status.AsString = "NEEDS_WORK" @>
+                test <@ participant.User.Id = 2 @>
+                test <@ participant.Approved = false @>
+                test
+                    <@ participant.LastReviewedCommit =
+                        Some("ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca" |> CommitHash.fromString) @>
+                test <@ participant.Status.AsString = "NEEDS_WORK" @>
 
-                      test
-                          <@ status
-                             |> NonNullString.value = "UNAPPROVED" @>
-                  | x -> failtestNoStackf "should be a needs-work event but got %A" x
-              | Error(s) -> failtestNoStackf "error: %A" s
+                test <@ status |> NonNullString.value = "UNAPPROVED" @>
+            | x -> failtestNoStackf "should be a needs-work event but got %A" x
           testCase "PR merged" <| fun () ->
-              let src = File.ReadAllText "testdata/pr-merged.json"
-              match Decode.fromString Event.decoder src with
-              | Ok(actual) ->
-                  match actual with
-                  | Event.Merged(common) ->
-                      test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T10:39:36+1000")) @>
-                      test <@ common.Actor.Email.AsString = "user@example.com" @>
-                      test <@ common.PullRequest.State.AsString = "MERGED" @>
-                      test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
-                      test
-                          <@ common.PullRequest.ToRef.LatestCommit.AsString = "8d2ad38c918fa6943859fca2176c89ea98b92a21" @>
-                  | x -> failtestNoStackf "should be a merged event but got %A" x
-              | Error(s) -> failtestNoStackf "error: %A" s
+            match "testdata/pr-merged.json" |> run with
+            | Event.Merged(common) ->
+                test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T10:39:36+1000")) @>
+                let actor: User =
+                    { Name = "user" |> NonNullString.create
+                      Email = "user@example.com" |> NonNullString.create
+                      Id = 2
+                      DisplayName = "User" |> NonNullString.create
+                      Active = true
+                      Slug = "user" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                Expect.equal common.Actor actor "should match"
+                test <@ common.PullRequest.State.AsString = "MERGED" @>
+                test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
+                test
+                    <@ common.PullRequest.ToRef.LatestCommit.AsString = "8d2ad38c918fa6943859fca2176c89ea98b92a21" @>
+            | x -> failtestNoStackf "should be a merged event but got %A" x
           testCase "PR declined" <| fun () ->
-              let src = File.ReadAllText "testdata/pr-declined.json"
-              match Decode.fromString Event.decoder src with
-              | Ok(actual) ->
-                  match actual with
-                  | Event.Declined(common) ->
-                      test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:14:43+1000")) @>
-                      test <@ common.Actor.Email.AsString = "admin@example.com" @>
-                      test <@ common.PullRequest.State.AsString = "DECLINED" @>
-                      test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
-                      test
-                          <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
-                  | x -> failtestNoStackf "should be a declined event but got %A" x
-              | Error(s) -> failtestNoStackf "error: %A" s
+            match "testdata/pr-declined.json" |> run with
+            | Event.Declined(common) ->
+                test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:14:43+1000")) @>
+                let actor: User =
+                    { Id = 1
+                      Name = "admin" |> NonNullString.create
+                      Email = "admin@example.com" |> NonNullString.create
+                      DisplayName = "Administrator" |> NonNullString.create
+                      Active = true
+                      Slug = "admin" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                Expect.equal common.Actor actor "should match"
+                test <@ common.PullRequest.State.AsString = "DECLINED" @>
+                test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
+                test
+                    <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
+            | x -> failtestNoStackf "should be a declined event but got %A" x
           testCase "PR deleted" <| fun () ->
-              let src = File.ReadAllText "testdata/pr-deleted.json"
-              match Decode.fromString Event.decoder src with
-              | Ok(actual) ->
-                  match actual with
-                  | Event.Deleted(common) ->
-                      test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:16:17+1000")) @>
-                      test <@ common.Actor.Email.AsString = "admin@example.com" @>
-                      test <@ common.PullRequest.State.AsString = "OPEN" @>
-                      test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
-                      test
-                          <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
-                  | x -> failtestNoStackf "should be a deleted event but got %A" x
-              | Error(s) -> failtestNoStackf "error: %A" s
+            match "testdata/pr-deleted.json" |> run with
+            | Event.Deleted(common) ->
+                test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:16:17+1000")) @>
+                let actor: User =
+                    { Id = 1
+                      Name = "admin" |> NonNullString.create
+                      Email = "admin@example.com" |> NonNullString.create
+                      DisplayName = "Administrator" |> NonNullString.create
+                      Active = true
+                      Slug = "admin" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                Expect.equal common.Actor actor "should match"
+                test <@ common.PullRequest.State.AsString = "OPEN" @>
+                test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
+                test
+                    <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
+            | x -> failtestNoStackf "should be a deleted event but got %A" x
           testCase "PR comment added" <| fun () ->
-              let src = File.ReadAllText "testdata/pr-comment-added.json"
-              match Decode.fromString Event.decoder src with
-              | Ok(actual) ->
-                  match actual with
-                  | Event.CommentAdded(common, comment, parent) ->
-                      test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:21:06+1000")) @>
-                      test <@ common.Actor.Email.AsString = "admin@example.com" @>
-                      test <@ common.PullRequest.State.AsString = "OPEN" @>
-                      test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
-                      test
-                          <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
-                      test <@ comment.Id = 62 @>
-                      test <@ comment.Text.AsString = "I am a PR comment" @>
-                      test <@ comment.CreatedDate.AsInt = 1505784066751L @>
-                      test <@ parent = Some(43) @>
-                  | x -> failtestNoStackf "should be a comment added event but got %A" x
-              | Error(s) -> failtestNoStackf "error: %A" s
+            match "testdata/pr-comment-added.json" |> run with
+            | Event.CommentAdded(common, comment, parent) ->
+                test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:21:06+1000")) @>
+                let actor: User =
+                    { Id = 1
+                      Name = "admin" |> NonNullString.create
+                      Email = "admin@example.com" |> NonNullString.create
+                      DisplayName = "Administrator" |> NonNullString.create
+                      Active = true
+                      Slug = "admin" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                Expect.equal common.Actor actor "should match"
+                test <@ common.PullRequest.State.AsString = "OPEN" @>
+                test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
+                test
+                    <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
+                test <@ comment.Id = 62 @>
+                test <@ comment.Text.AsString = "I am a PR comment" @>
+                test <@ comment.CreatedDate.AsInt = 1505784066751L @>
+                test <@ parent = Some(43) @>
+            | x -> failtestNoStackf "should be a comment added event but got %A" x
           testCase "PR comment edited" <| fun () ->
-              let src = File.ReadAllText "testdata/pr-comment-edited.json"
-              match Decode.fromString Event.decoder src with
-              | Ok(actual) ->
-                  match actual with
-                  | Event.CommentEdited(common, comment, parent, prevText) ->
-                      test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:24:19+1000")) @>
-                      test <@ common.Actor.Email.AsString = "admin@example.com" @>
-                      test <@ common.PullRequest.State.AsString = "OPEN" @>
-                      test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
-                      test
-                          <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
-                      test <@ comment.Id = 62 @>
-                      test <@ comment.Text.AsString = "I am a PR comment that was edited" @>
-                      test <@ comment.CreatedDate.AsInt = 1505784066751L @>
-                      test <@ parent = Some(43) @>
-                      test
-                          <@ prevText
-                             |> NonNullString.value = "I am a PR comment" @>
-                  | x -> failtestNoStackf "should be a comment deleted event but got %A" x
-              | Error(s) -> failtestNoStackf "error: %A" s
+            match "testdata/pr-comment-edited.json" |> run with
+            | Event.CommentEdited(common, comment, parent, prevText) ->
+                test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:24:19+1000")) @>
+                let actor: User =
+                    { Id = 1
+                      Name = "admin" |> NonNullString.create
+                      Email = "admin@example.com" |> NonNullString.create
+                      DisplayName = "Administrator" |> NonNullString.create
+                      Active = true
+                      Slug = "admin" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                Expect.equal common.Actor actor "should match"
+                test <@ common.PullRequest.State.AsString = "OPEN" @>
+                test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
+                test
+                    <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
+                test <@ comment.Id = 62 @>
+                test <@ comment.Text.AsString = "I am a PR comment that was edited" @>
+                test <@ comment.CreatedDate.AsInt = 1505784066751L @>
+                test <@ parent = Some(43) @>
+                test <@ prevText |> NonNullString.value = "I am a PR comment" @>
+            | x -> failtestNoStackf "should be a comment deleted event but got %A" x
           testCase "PR comment deleted" <| fun () ->
-              let src = File.ReadAllText "testdata/pr-comment-deleted.json"
-              match Decode.fromString Event.decoder src with
-              | Ok(actual) ->
-                  match actual with
-                  | Event.CommentDeleted(common, comment, parent) ->
-                      test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:25:47+1000")) @>
-                      test <@ common.Actor.Email.AsString = "admin@example.com" @>
-                      test <@ common.PullRequest.State.AsString = "OPEN" @>
-                      test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
-                      test
-                          <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
-                      test <@ comment.Id = 62 @>
-                      test <@ comment.Text.AsString = "I am a PR comment that was edited" @>
-                      test <@ comment.CreatedDate.AsInt = 1505784066751L @>
-                      test <@ parent = Some(43) @>
-                  | x -> failtestNoStackf "should be a comment deleted event but got %A" x
-              | Error(s) -> failtestNoStackf "error: %A" s ]
+            match "testdata/pr-comment-deleted.json" |> run with
+            | Event.CommentDeleted(common, comment, parent) ->
+                test <@ common.Date = (DateTimeOffset.Parse("2017-09-19T11:25:47+1000")) @>
+                let actor: User =
+                    { Id = 1
+                      Name = "admin" |> NonNullString.create
+                      Email = "admin@example.com" |> NonNullString.create
+                      DisplayName = "Administrator" |> NonNullString.create
+                      Active = true
+                      Slug = "admin" |> NonNullString.create
+                      Type = "NORMAL" |> NonNullString.create }
+                Expect.equal common.Actor actor "should match"
+                test <@ common.PullRequest.State.AsString = "OPEN" @>
+                test <@ common.PullRequest.Author.User.DisplayName.AsString = "Administrator" @>
+                test
+                    <@ common.PullRequest.ToRef.LatestCommit.AsString = "7e48f426f0a6e47c5b5e862c31be6ca965f82c9c" @>
+                test <@ comment.Id = 62 @>
+                test <@ comment.Text.AsString = "I am a PR comment that was edited" @>
+                test <@ comment.CreatedDate.AsInt = 1505784066751L @>
+                test <@ parent = Some(43) @>
+            | x -> failtestNoStackf "should be a comment deleted event but got %A" x ]

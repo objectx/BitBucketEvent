@@ -13,6 +13,7 @@ type PullRequest =
     { Id: int
       Version: int
       Title: NonNullString
+      Description: NonNullString option
       State: NonNullString
       Open: bool
       Closed: bool
@@ -30,6 +31,7 @@ module PullRequest =
         { Id = -1
           Version = -1
           Title = NonNullString.empty
+          Description = None
           State = NonNullString.empty
           Open = false
           Closed = false
@@ -47,6 +49,7 @@ module PullRequest =
             { Id = get.Required.Field _Id Decode.int
               Version = get.Required.Field _Version Decode.int
               Title = get.Required.Field _Title NonNullString.decoder
+              Description = get.Optional.Field _Description NonNullString.decoder
               State = get.Required.Field _State NonNullString.decoder
               Open = get.Required.Field _Open Decode.bool
               Closed = get.Required.Field _Closed Decode.bool
@@ -65,6 +68,7 @@ module PullRequest =
             [ _Id, x.Id |> Encode.int
               _Version, x.Version |> Encode.int
               _Title, x.Title.AsJsonValue
+              if x.Description.IsSome then (_Description, x.Description.Value.AsJsonValue)
               _State, x.State.AsJsonValue
               _Open, x.Open |> Encode.bool
               _Closed, x.Closed |> Encode.bool

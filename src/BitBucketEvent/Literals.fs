@@ -79,6 +79,9 @@ let _Version = "version"
 let _Title = "title"
 
 [<Literal>]
+let _Description = "description"
+
+[<Literal>]
 let _Open = "open"
 
 [<Literal>]

@@ -15,7 +15,8 @@ module NonNullString =
     let empty = NonNullString ""
 
     let create (s: string): NonNullString =
-        (if isNull s then "" else s)
+        (if isNull s then ""
+         else s)
         |> NonNullString
 
     let value (NonNullString s) = s
@@ -34,6 +35,12 @@ type Timestamp = Timestamp of DateTimeOffset
 module Timestamp =
     let def = DateTimeOffset.FromUnixTimeMilliseconds 0L |> Timestamp
     let create (t: DateTimeOffset) = t |> Timestamp
+
+    let fromInt (t: int64) =
+        t
+        |> DateTimeOffset.FromUnixTimeMilliseconds
+        |> Timestamp
+
     let value (Timestamp t) = t
     let toInt (Timestamp t) = t.ToUnixTimeMilliseconds()
     let decoder: Decoder<Timestamp> =
