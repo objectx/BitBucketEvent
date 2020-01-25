@@ -42,8 +42,8 @@ module Generator =
 let config =
     { FsCheckConfig.defaultConfig with
           arbitrary = [ typeof<Generator.UserGen> ]
-          maxTest = 2000
-          endSize = 200 }
+          maxTest = 3000
+          endSize = 800 }
 
 [<Tests>]
 let testCommitHash =
